@@ -1,0 +1,3 @@
+C:/Users/Asus/Desktop/Nelson/Universidade/3ª Ano LCC/Cadeiras/2º Semestre/Computação Gráfica/Trabalho Prático/1º Fase/build/CMakeFiles/Fase1TP.dir
+C:/Users/Asus/Desktop/Nelson/Universidade/3ª Ano LCC/Cadeiras/2º Semestre/Computação Gráfica/Trabalho Prático/1º Fase/build/CMakeFiles/ALL_BUILD.dir
+C:/Users/Asus/Desktop/Nelson/Universidade/3ª Ano LCC/Cadeiras/2º Semestre/Computação Gráfica/Trabalho Prático/1º Fase/build/CMakeFiles/ZERO_CHECK.dir

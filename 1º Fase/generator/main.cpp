@@ -7,124 +7,93 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
-GLdouble dist = 10, beta = M_PI_4, alpha = M_PI_4;
+#include <iostream>
+#include <fstream>
 
-void changeSize(int w, int h) {
-	// Prevent a divide by zero, when window is too short
-	// (you cant make a window with zero width).
-	if (h == 0)
-		h = 1;
+using namespace std;
 
-	// compute window's aspect ratio 
-	float ratio = w * 1.0 / h;
+ofstream myfile;
 
-	// Set the projection matrix as current
-	glMatrixMode(GL_PROJECTION);
-	// Load Identity Matrix
-	glLoadIdentity();
-
-	// Set the viewport to be the entire window
-	glViewport(0, 0, w, h);
-
-	// Set perspective
-	gluPerspective(45.0f, ratio, 1.0f, 1000.0f);
-
-	// return to the model view matrix mode
-	glMatrixMode(GL_MODELVIEW);
+void printVertex(float x, float y, float z) {
+	myfile << x << " " << y << " " << z << "\n";
 }
 
-void drawPlane(float distX, float distZ) {
-	glBegin(GL_TRIANGLES);
-	
-	glColor3f(0.0, 0.5, 1.0);
-	glVertex3f(0, 0, -distZ / 2);
-	glVertex3f(-distX / 2, 0, 0);
-	glVertex3f(0, 0, distZ/2);
+void printPlane(int distX, int distZ) {
+	printVertex(0, 0, -distZ / 2.0);
+	printVertex(-distX / 2.0, 0, 0);
+	printVertex(0, 0, distZ/2.0);
 
-	glVertex3f(0, 0, distZ / 2);
-	glVertex3f(-distX / 2, 0, 0);
-	glVertex3f(0, 0, -distZ / 2);
+	printVertex(0, 0, distZ / 2.0);
+	printVertex(-distX / 2.0, 0, 0);
+	printVertex(0, 0, -distZ / 2.0);
 
-	glColor3f(0.5, 1.0, 0.0);
-	glVertex3f(0, 0, distZ/2);
-	glVertex3f(distX/2, 0, 0);
-	glVertex3f(0, 0, -distZ / 2);
+	printVertex(0, 0, distZ/2.0);
+	printVertex(distX/2.0, 0, 0);
+	printVertex(0, 0, -distZ / 2.0);
 
-	glVertex3f(0, 0, -distZ / 2);
-	glVertex3f(distX / 2, 0, 0);
-	glVertex3f(0, 0, distZ / 2);
-
-	glEnd();
+	printVertex(0, 0, -distZ / 2.0);
+	printVertex(distX / 2.0, 0, 0);
+	printVertex(0, 0, distZ / 2.0);
 }
 
-void drawBox(float dimX, float dimY, float dimZ, int divisions) {
-	glBegin(GL_TRIANGLES);
-
+void printBox(int dimX, int dimY, int dimZ, int divisions) {
 	/* Triângulos da base */
-	glColor3f(0.5, 1.0, 1.0);
-	glVertex3f(dimX/2, 0, dimZ/2);
-	glVertex3f(-dimX/2, 0, -dimZ/2);
-	glVertex3f(dimX/2, 0, -dimZ/2);
+	printVertex(dimX/2.0, 0, dimZ/2.0);
+	printVertex(-dimX/2.0, 0, -dimZ/2.0);
+	printVertex(dimX/2.0, 0, -dimZ/2.0);
 
-	glVertex3f(-dimX/2, 0, -dimZ/2);
-	glVertex3f(dimX/2, 0, dimZ/2);
-	glVertex3f(-dimX/2, 0, dimZ/2);
+	printVertex(-dimX/2.0, 0, -dimZ/2.0);
+	printVertex(dimX/2.0, 0, dimZ/2.0);
+	printVertex(-dimX/2.0, 0, dimZ/2.0);
 
 	/* Triângulos laterais */
-	glColor3f(0.1, 0.1, 0.1);
-	glVertex3f(dimX/2, dimY, dimZ/2);
-	glVertex3f(dimX/2, 0, dimZ/2);
-	glVertex3f(dimX/2, 0, -dimZ/2);
+	printVertex(dimX/2.0, dimY, dimZ/2.0);
+	printVertex(dimX/2.0, 0, dimZ/2.0);
+	printVertex(dimX/2.0, 0, -dimZ/2.0);
 
-	glVertex3f(dimX/2, dimY, dimZ/2);
-	glVertex3f(dimX/2, 0, -dimZ/2);
-	glVertex3f(dimX/2, dimY, -dimZ/2);
+	printVertex(dimX/2.0, dimY, dimZ/2.0);
+	printVertex(dimX/2.0, 0, -dimZ/2.0);
+	printVertex(dimX/2.0, dimY, -dimZ/2.0);
 
-	glColor3f(0.2, 0.2, 0.2);
-	glVertex3f(dimX/2, dimY, -dimZ/2);
-	glVertex3f(dimX/2, 0, -dimZ/2);
-	glVertex3f(-dimX/2, 0, -dimZ/2);
+	printVertex(dimX/2.0, dimY, -dimZ/2.0);
+	printVertex(dimX/2.0, 0, -dimZ/2.0);
+	printVertex(-dimX/2.0, 0, -dimZ/2.0);
 
-	glVertex3f(dimX/2, dimY, -dimZ/2);
-	glVertex3f(-dimX/2, 0, -dimZ/2);
-	glVertex3f(-dimX/2, dimY, -dimZ/2);
+	printVertex(dimX/2.0, dimY, -dimZ/2.0);
+	printVertex(-dimX/2.0, 0, -dimZ/2.0);
+	printVertex(-dimX/2.0, dimY, -dimZ/2.0);
 
-	glColor3f(0.3, 0.3, 0.3);
-	glVertex3f(-dimX/2, dimY, -dimZ/2);
-	glVertex3f(-dimX/2, 0, -dimZ/2);
-	glVertex3f(-dimX/2, 0, dimZ/2);
+	printVertex(-dimX/2.0, dimY, -dimZ/2.0);
+	printVertex(-dimX/2.0, 0, -dimZ/2.0);
+	printVertex(-dimX/2.0, 0, dimZ/2.0);
 
-	glVertex3f(-dimX/2, dimY, -dimZ/2);
-	glVertex3f(-dimX/2, 0, dimZ/2);
-	glVertex3f(-dimX/2, dimY, dimZ/2);
+	printVertex(-dimX/2.0, dimY, -dimZ/2.0);
+	printVertex(-dimX/2.0, 0, dimZ/2.0);
+	printVertex(-dimX/2.0, dimY, dimZ/2.0);
 
-	glColor3f(0.4, 0.4, 0.4);
-	glVertex3f(-dimX/2, dimY, dimZ/2);
-	glVertex3f(-dimX/2, 0, dimZ/2);
-	glVertex3f(dimX/2, 0, dimZ/2);
+	printVertex(-dimX/2.0, dimY, dimZ/2.0);
+	printVertex(-dimX/2.0, 0, dimZ/2.0);
+	printVertex(dimX/2.0, 0, dimZ/2.0);
 
-	glVertex3f(-dimX/2, dimY, dimZ/2);
-	glVertex3f(dimX/2, 0, dimZ/2);
-	glVertex3f(dimX/2, dimY, dimZ/2);
+	printVertex(-dimX/2.0, dimY, dimZ/2.0);
+	printVertex(dimX/2.0, 0, dimZ/2.0);
+	printVertex(dimX/2.0, dimY, dimZ/2.0);
 
 	/* Triângulos do topo */
-	glColor3f(1, 0.5, 0.0);
-	glVertex3f(dimX/2, dimY, dimZ/2);
-	glVertex3f(dimX/2, dimY, -dimZ/2);
-	glVertex3f(-dimX/2, dimY, -dimZ/2);
+	printVertex(dimX/2.0, dimY, dimZ/2.0);
+	printVertex(dimX/2.0, dimY, -dimZ/2.0);
+	printVertex(-dimX/2.0, dimY, -dimZ/2.0);
 
-	glVertex3f(-dimX/2, dimY, -dimZ/2);
-	glVertex3f(-dimX/2, dimY, dimZ/2);
-	glVertex3f(dimX/2, dimY, dimZ/2);
-
-	glEnd();
+	printVertex(-dimX/2.0, dimY, -dimZ/2.0);
+	printVertex(-dimX/2.0, dimY, dimZ/2.0);
+	printVertex(dimX/2.0, dimY, dimZ/2.0);
 }
 
-void drawSphere(float radius, float height, int slices, int stacks) {
+void printSphere(int radius, int slices, int stacks) {
 
 }
 
-void drawCone(float bottomRadius, float height, int slices, int stacks) {
+void printCone(int bottomRadius, int height, int slices, int stacks) {
 
 }
 
@@ -167,91 +136,48 @@ void drawCylinder(float radius, float height, int slices) {
 	glEnd();
 } */
 
-void renderScene(void) {
-	// clear buffers
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	// set the camera
-	glLoadIdentity();
-	gluLookAt(dist*cos(beta)*sin(alpha), dist*sin(beta), dist*cos(beta)*cos(alpha),
-		      0.0, 0.0, 0.0,
-		      0.0f, 1.0f, 0.0f);
-
-	/* drawCylinder(1, 2, 10); */
-	drawBox(3, 3, 3, 10);
-
-	// End of frame
-	glutSwapBuffers();
-}
-
-void processKeys(unsigned char c, int xx, int yy) {
-	// put code to process regular keys in here
-	float deltaToMove = 0.3;
-	switch (c) {
-		case 'q':
-			dist += deltaToMove;
-			break;
-
-		case 'e':
-			dist -= deltaToMove;
-			break;
-
-		default:
-			return;
-	}
-
-	glutPostRedisplay();
-}
-
-void processSpecialKeys(int key, int xx, int yy) {
-	// put code to process special keys in here
-	float deltaToMove = 0.1;
-	switch (key) {
-		case GLUT_KEY_UP:
-			beta += deltaToMove;
-			break;
-
-		case GLUT_KEY_DOWN:
-			beta -= deltaToMove;
-			break;
-
-		case GLUT_KEY_LEFT:
-			alpha -= deltaToMove;
-			break;
-
-		case GLUT_KEY_RIGHT:
-			alpha += deltaToMove;
-			break;
-
-		default:
-			return;
-	}
-
-	glutPostRedisplay();
-}
-
 int main(int argc, char **argv) {
-	// init GLUT and the window
-	glutInit(&argc, argv);
-	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
-	glutInitWindowPosition(100, 100);
-	glutInitWindowSize(800, 800);
-	glutCreateWindow("Fase1TP");
+	if (argc < 5) {
+		cout << "Indique a forma geométrica que pretende gerar e o ficheiro de destino\n";
+		exit(EXIT_FAILURE);
+	}
 
-	// Required callback registry 
-	glutDisplayFunc(renderScene);
-	glutReshapeFunc(changeSize);
+  	myfile.open(argv[argc-1]);
+	if (string(argv[1]) == "plane") {
+		if (argc != 5) {
+			cout << "Número de argumentos para o plano incorreto\n";
+			exit(EXIT_FAILURE);
+		}
 
-	// Callback registration for keyboard processing
-	glutKeyboardFunc(processKeys);
-	glutSpecialFunc(processSpecialKeys);
+		int distx = atoi(argv[2]), distz = atoi(argv[3]);
+		printPlane(distx, distz);
+	} else if (string(argv[1]) == "box") {
+		if (argc != 7) {
+			cout << "Número de argumentos para a caixa incorreto\n";
+			exit(EXIT_FAILURE);
+		}
 
-	// OpenGL settings
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_CULL_FACE);
+		int dimX = atoi(argv[2]), dimY = atoi(argv[3]), dimZ = atoi(argv[4]), divisions = atoi(argv[5]);
+		printBox(dimX, dimY, dimZ, divisions);
+	} else if (string(argv[1]) == "sphere") {
+		if (argc != 6) {
+			cout << "Número de argumentos para a esfera incorreto\n";
+			exit(EXIT_FAILURE);
+		}
 
-	// enter GLUT's main cycle
-	glutMainLoop();
+		int radius = atoi(argv[2]), slices = atoi(argv[3]), stacks = atoi(argv[4]);
+		printSphere(radius, slices, stacks);
+	} else if (string(argv[1]) == "cone") {
+		if (argc != 5) {
+			cout << "Número de argumentos para o cone incorreto\n";
+			exit(EXIT_FAILURE);
+		}
+
+		int bottomRadius = atoi(argv[2]), heightradius = atoi(argv[3]), slices = atoi(argv[4]), stacks = atoi(argv[5]);
+		printCone(bottomRadius, heightradius, slices, stacks);
+	}
+
+  	myfile.close();
 
 	return 1;
 }

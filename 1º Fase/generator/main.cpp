@@ -1,12 +1,3 @@
-#ifdef __APPLE__
-#include <GLUT/glut.h>
-#else
-#include <GL/glut.h>
-#endif
-
-#define _USE_MATH_DEFINES
-#include <math.h>
-
 #include <iostream>
 #include <fstream>
 
@@ -175,6 +166,9 @@ int main(int argc, char **argv) {
 
 		int bottomRadius = atoi(argv[2]), heightradius = atoi(argv[3]), slices = atoi(argv[4]), stacks = atoi(argv[5]);
 		printCone(bottomRadius, heightradius, slices, stacks);
+	} else {
+		cout << "Figura geométrica não suportada\n";
+		exit(EXIT_FAILURE);
 	}
 
   	myfile.close();

@@ -8,11 +8,17 @@
 #include <math.h>
 
 #include <iostream>
-#include "tinyxml2.h"
+#include <fstream>
+#include <vector>
+#include <tuple>
 
+#include "tinyxml2.h"
 using namespace tinyxml2;
 
 GLdouble dist = 10, beta = M_PI_4, alpha = M_PI_4;
+
+typedef std::tuple<int, int, int> vertice;
+std::vector<vertice> allVertices;
 
 void changeSize(int w, int h) {
 	// Prevent a divide by zero, when window is too short
@@ -38,82 +44,48 @@ void changeSize(int w, int h) {
 	glMatrixMode(GL_MODELVIEW);
 }
 
-void drawPlane(float distX, float distZ) {
+vertice extractVertice(std::string s) {
+	std::string delimiter = " ";
+	float x, y, z;
+	int pos;
+	std::string token;
+
+	// x
+	pos = s.find(delimiter);
+	token = s.substr(0, pos);
+	x = atof(token.c_str());
+	s.erase(0, pos + delimiter.length());
+	// y
+	pos = s.find(delimiter);
+	token = s.substr(0, pos);
+	y = atof(token.c_str());
+	s.erase(0, pos + delimiter.length());
+	// z
+	pos = s.find(delimiter);
+	token = s.substr(0, pos);
+	z = atof(token.c_str());
+
+	return vertice(x,y,z);
+}
+
+void addVertices(std::ifstream &vertices) {
+    char v[100];
+    while (vertices.getline(v, 100)) {
+        allVertices.push_back(extractVertice(v));
+    }
+}
+
+void drawVertices() {
 	glBegin(GL_TRIANGLES);
-	
-	glColor3f(0.0, 0.5, 1.0);
-	glVertex3f(0, 0, -distZ / 2);
-	glVertex3f(-distX / 2, 0, 0);
-	glVertex3f(0, 0, distZ/2);
 
-	glColor3f(0.5, 1.0, 0.0);
-	glVertex3f(0, 0, distZ/2);
-	glVertex3f(distX/2, 0, 0);
-	glVertex3f(0, 0, -distZ / 2);
-
-	glColor3f(0.0, 0.5, 1.0);
-	glVertex3f(0, 0, distZ / 2);
-	glVertex3f(-distX / 2, 0, 0);
-	glVertex3f(0, 0, -distZ / 2);
-
-	glColor3f(0.5, 1.0, 0.0);
-	glVertex3f(0, 0, -distZ / 2);
-	glVertex3f(distX / 2, 0, 0);
-	glVertex3f(0, 0, distZ / 2);
-
-	glEnd();
-}
-
-void drawBox(float dimX, float dimY, float dimZ, int divisions) {
-
-}
-
-void drawSphere(float radius, float height, int slices, int stacks) {
-
-}
-
-void drawCone(float bottomRadius, float height, int slices, int stacks) {
-
-}
-
-/*
-void drawCylinder(float radius, float height, int slices) {
-	// put code to draw cylinder in here
-	GLdouble alphaDelta = 2 * M_PI / slices;
-
-	glBegin(GL_TRIANGLES);
-	for (int i = 0; i < slices; i++) {
-		
-		// Circunfer�ncia de cima
-		glColor3f(1, 0.5, 0);
-		glVertex3f(0, height, 0);
-		glVertex3f(radius*sin(i*alphaDelta), height, radius*cos(i*alphaDelta));
-		glVertex3f(radius*sin((i + 1)*alphaDelta), height, radius*cos((i + 1)*alphaDelta));
-
-		// Festa dos tri�ngulos com os bicos para baixo
-		glColor3f(0.4, 0.4, 0.4);
-		glVertex3f(radius*sin((i + 1)*alphaDelta), height, radius*cos((i + 1)*alphaDelta));
-		glVertex3f(radius*sin(i*alphaDelta), height, radius*cos(i*alphaDelta));
-		glVertex3f(radius*sin((i + 0.5)*alphaDelta), 0, radius*cos((i + 0.5)*alphaDelta));
-	}
-
-	for (GLdouble i = 0.5; i < slices + 0.5; i++) {
-		
-		// Festa dos tri�ngulos com os bicos para cima
-		glColor3f(0.6, 0.6, 0.6);
-		glVertex3f(radius*sin(i*alphaDelta), 0, radius*cos(i*alphaDelta));
-		glVertex3f(radius*sin((i + 1)*alphaDelta), 0, radius*cos((i + 1)*alphaDelta));
-		glVertex3f(radius*sin((i + 0.5)*alphaDelta), height, radius*cos((i + 0.5)*alphaDelta));
-		
-		// Circunfer�ncia de baixo
-		glColor3f(0, 0.5, 1);
-		glVertex3f(0, 0, 0);
-		glVertex3f(radius*sin(i*alphaDelta), 0, radius*cos(i*alphaDelta));
-		glVertex3f(radius*sin((i - 1)*alphaDelta), 0, radius*cos((i - 1)*alphaDelta));
+	for(vertice v: allVertices) {
+		// Dar uma cor aleatória a cada triângulo (AMAZING!!!)
+		glColor3f(rand() / (float) RAND_MAX, rand() / (float) RAND_MAX, rand() / (float) RAND_MAX);
+		glVertex3f(std::get<0>(v), std::get<1>(v), std::get<2>(v));
 	}
 
 	glEnd();
-} */
+}
 
 void renderScene(void) {
 	// clear buffers
@@ -125,8 +97,7 @@ void renderScene(void) {
 		      0.0, 0.0, 0.0,
 		      0.0f, 1.0f, 0.0f);
 
-	/* drawCylinder(1, 2, 10); */
-	drawPlane(5, 5);
+	drawVertices();
 
 	// End of frame
 	glutSwapBuffers();
@@ -202,17 +173,18 @@ int main(int argc, char **argv) {
 	// Percorrer os atributos "model"
 	XMLElement *model = scene->FirstChildElement("model");
 	for (; model != nullptr; model = model->NextSiblingElement()) {
-		std::cout << model->Attribute("file") << std::endl;
+		std::ifstream myfile;
+		myfile.open(model->Attribute("file"));
+		addVertices(myfile);
+		myfile.close();
 	}
-	return 1;
-
 
 	// init GLUT and the window
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
 	glutInitWindowPosition(100, 100);
 	glutInitWindowSize(800, 800);
-	glutCreateWindow("Fase1TP");
+	glutCreateWindow("Fase1TP - Engine");
 
 	// Required callback registry 
 	glutDisplayFunc(renderScene);

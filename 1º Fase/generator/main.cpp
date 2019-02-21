@@ -41,17 +41,15 @@ void drawPlane(float distX, float distZ) {
 	glVertex3f(-distX / 2, 0, 0);
 	glVertex3f(0, 0, distZ/2);
 
-	glColor3f(0.5, 1.0, 0.0);
-	glVertex3f(0, 0, distZ/2);
-	glVertex3f(distX/2, 0, 0);
-	glVertex3f(0, 0, -distZ / 2);
-
-	glColor3f(0.0, 0.5, 1.0);
 	glVertex3f(0, 0, distZ / 2);
 	glVertex3f(-distX / 2, 0, 0);
 	glVertex3f(0, 0, -distZ / 2);
 
 	glColor3f(0.5, 1.0, 0.0);
+	glVertex3f(0, 0, distZ/2);
+	glVertex3f(distX/2, 0, 0);
+	glVertex3f(0, 0, -distZ / 2);
+
 	glVertex3f(0, 0, -distZ / 2);
 	glVertex3f(distX / 2, 0, 0);
 	glVertex3f(0, 0, distZ / 2);
@@ -60,7 +58,66 @@ void drawPlane(float distX, float distZ) {
 }
 
 void drawBox(float dimX, float dimY, float dimZ, int divisions) {
+	glBegin(GL_TRIANGLES);
 
+	/* Tri√¢ngulos da base */
+	glColor3f(0.5, 1.0, 1.0);
+	glVertex3f(dimX/2, 0, dimZ/2);
+	glVertex3f(dimX/2, 0, -dimZ/2);
+	glVertex3f(-dimX/2, 0, -dimZ/2);
+
+	glVertex3f(-dimX/2, 0, -dimZ/2);
+	glVertex3f(-dimX/2, 0, dimZ/2);
+	glVertex3f(dimX/2, 0, dimZ/2);
+
+	/* Tri√¢ngulos laterais */
+	glColor3f(0.1, 0.1, 0.1);
+	glVertex3f(dimX/2, dimY, dimZ/2);
+	glVertex3f(dimX/2, 0, dimZ/2);
+	glVertex3f(dimX/2, 0, -dimZ/2);
+
+	glVertex3f(dimX/2, dimY, dimZ/2);
+	glVertex3f(dimX/2, 0, -dimZ/2);
+	glVertex3f(dimX/2, dimY, -dimZ/2);
+
+	glColor3f(0.2, 0.2, 0.2);
+	glVertex3f(dimX/2, dimY, -dimZ/2);
+	glVertex3f(dimX/2, 0, -dimZ/2);
+	glVertex3f(-dimX/2, 0, -dimZ/2);
+
+	glVertex3f(dimX/2, dimY, -dimZ/2);
+	glVertex3f(-dimX/2, 0, -dimZ/2);
+	glVertex3f(-dimX/2, dimY, -dimZ/2);
+
+	glColor3f(0.3, 0.3, 0.3);
+	glVertex3f(-dimX/2, dimY, -dimZ/2);
+	glVertex3f(-dimX/2, 0, -dimZ/2);
+	glVertex3f(-dimX/2, 0, dimZ/2);
+
+	glVertex3f(-dimX/2, dimY, -dimZ/2);
+	glVertex3f(-dimX/2, 0, dimZ/2);
+	glVertex3f(-dimX/2, dimY, dimZ/2);
+
+	glColor3f(0.4, 0.4, 0.4);
+	glVertex3f(-dimX/2, dimY, dimZ/2);
+	glVertex3f(-dimX/2, 0, dimZ/2);
+	glVertex3f(dimX/2, 0, dimZ/2);
+
+	glVertex3f(-dimX/2, dimY, dimZ/2);
+	glVertex3f(dimX/2, 0, dimZ/2);
+	glVertex3f(dimX/2, dimY, dimZ/2);
+
+	/* Tri√¢ngulos do topo */
+	glColor3f(1, 0.5, 0.0);
+	glVertex3f(dimX/2, dimY, dimZ/2);
+	glVertex3f(dimX/2, dimY, -dimZ/2);
+	glVertex3f(-dimX/2, dimY, -dimZ/2);
+
+	glVertex3f(-dimX/2, dimY, -dimZ/2);
+	glVertex3f(-dimX/2, dimY, dimZ/2);
+	glVertex3f(dimX/2, dimY, dimZ/2);
+
+	glEnd();
 }
 
 void drawSphere(float radius, float height, int slices, int stacks) {
@@ -79,13 +136,13 @@ void drawCylinder(float radius, float height, int slices) {
 	glBegin(GL_TRIANGLES);
 	for (int i = 0; i < slices; i++) {
 		
-		// CircunferÍncia de cima
+		// CircunferÔøΩncia de cima
 		glColor3f(1, 0.5, 0);
 		glVertex3f(0, height, 0);
 		glVertex3f(radius*sin(i*alphaDelta), height, radius*cos(i*alphaDelta));
 		glVertex3f(radius*sin((i + 1)*alphaDelta), height, radius*cos((i + 1)*alphaDelta));
 
-		// Festa dos tri‚ngulos com os bicos para baixo
+		// Festa dos triÔøΩngulos com os bicos para baixo
 		glColor3f(0.4, 0.4, 0.4);
 		glVertex3f(radius*sin((i + 1)*alphaDelta), height, radius*cos((i + 1)*alphaDelta));
 		glVertex3f(radius*sin(i*alphaDelta), height, radius*cos(i*alphaDelta));
@@ -94,13 +151,13 @@ void drawCylinder(float radius, float height, int slices) {
 
 	for (GLdouble i = 0.5; i < slices + 0.5; i++) {
 		
-		// Festa dos tri‚ngulos com os bicos para cima
+		// Festa dos triÔøΩngulos com os bicos para cima
 		glColor3f(0.6, 0.6, 0.6);
 		glVertex3f(radius*sin(i*alphaDelta), 0, radius*cos(i*alphaDelta));
 		glVertex3f(radius*sin((i + 1)*alphaDelta), 0, radius*cos((i + 1)*alphaDelta));
 		glVertex3f(radius*sin((i + 0.5)*alphaDelta), height, radius*cos((i + 0.5)*alphaDelta));
 		
-		// CircunferÍncia de baixo
+		// CircunferÔøΩncia de baixo
 		glColor3f(0, 0.5, 1);
 		glVertex3f(0, 0, 0);
 		glVertex3f(radius*sin(i*alphaDelta), 0, radius*cos(i*alphaDelta));

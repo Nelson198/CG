@@ -1,7 +1,7 @@
 ﻿cmake_minimum_required(VERSION 3.5)
 
 # Project Name
-PROJECT(Fase1TP)
+PROJECT(engine)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 

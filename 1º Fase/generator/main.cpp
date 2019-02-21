@@ -63,12 +63,12 @@ void drawBox(float dimX, float dimY, float dimZ, int divisions) {
 	/* Triângulos da base */
 	glColor3f(0.5, 1.0, 1.0);
 	glVertex3f(dimX/2, 0, dimZ/2);
-	glVertex3f(dimX/2, 0, -dimZ/2);
 	glVertex3f(-dimX/2, 0, -dimZ/2);
+	glVertex3f(dimX/2, 0, -dimZ/2);
 
 	glVertex3f(-dimX/2, 0, -dimZ/2);
-	glVertex3f(-dimX/2, 0, dimZ/2);
 	glVertex3f(dimX/2, 0, dimZ/2);
+	glVertex3f(-dimX/2, 0, dimZ/2);
 
 	/* Triângulos laterais */
 	glColor3f(0.1, 0.1, 0.1);
@@ -178,7 +178,7 @@ void renderScene(void) {
 		      0.0f, 1.0f, 0.0f);
 
 	/* drawCylinder(1, 2, 10); */
-	drawPlane(5, 5);
+	drawBox(3, 3, 3, 10);
 
 	// End of frame
 	glutSwapBuffers();

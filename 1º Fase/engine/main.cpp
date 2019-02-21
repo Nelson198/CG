@@ -7,6 +7,11 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
+#include <iostream>
+#include "tinyxml2.h"
+
+using namespace tinyxml2;
+
 GLdouble dist = 10, beta = M_PI_4, alpha = M_PI_4;
 
 void changeSize(int w, int h) {
@@ -79,13 +84,13 @@ void drawCylinder(float radius, float height, int slices) {
 	glBegin(GL_TRIANGLES);
 	for (int i = 0; i < slices; i++) {
 		
-		// Circunferência de cima
+		// Circunferï¿½ncia de cima
 		glColor3f(1, 0.5, 0);
 		glVertex3f(0, height, 0);
 		glVertex3f(radius*sin(i*alphaDelta), height, radius*cos(i*alphaDelta));
 		glVertex3f(radius*sin((i + 1)*alphaDelta), height, radius*cos((i + 1)*alphaDelta));
 
-		// Festa dos triângulos com os bicos para baixo
+		// Festa dos triï¿½ngulos com os bicos para baixo
 		glColor3f(0.4, 0.4, 0.4);
 		glVertex3f(radius*sin((i + 1)*alphaDelta), height, radius*cos((i + 1)*alphaDelta));
 		glVertex3f(radius*sin(i*alphaDelta), height, radius*cos(i*alphaDelta));
@@ -94,13 +99,13 @@ void drawCylinder(float radius, float height, int slices) {
 
 	for (GLdouble i = 0.5; i < slices + 0.5; i++) {
 		
-		// Festa dos triângulos com os bicos para cima
+		// Festa dos triï¿½ngulos com os bicos para cima
 		glColor3f(0.6, 0.6, 0.6);
 		glVertex3f(radius*sin(i*alphaDelta), 0, radius*cos(i*alphaDelta));
 		glVertex3f(radius*sin((i + 1)*alphaDelta), 0, radius*cos((i + 1)*alphaDelta));
 		glVertex3f(radius*sin((i + 0.5)*alphaDelta), height, radius*cos((i + 0.5)*alphaDelta));
 		
-		// Circunferência de baixo
+		// Circunferï¿½ncia de baixo
 		glColor3f(0, 0.5, 1);
 		glVertex3f(0, 0, 0);
 		glVertex3f(radius*sin(i*alphaDelta), 0, radius*cos(i*alphaDelta));
@@ -174,6 +179,34 @@ void processSpecialKeys(int key, int xx, int yy) {
 }
 
 int main(int argc, char **argv) {
+	if (argc != 2) {
+		std::cout << "Por favor, forneÃ§a um ficheiro XML\n";
+		exit(EXIT_FAILURE);
+	}
+
+	// Carregar o ficheiro XML para a memÃ³ria
+	XMLDocument doc;
+	XMLError e = doc.LoadFile(argv[1]);
+	if (e != XML_SUCCESS) {
+		std::cout << e << "Por favor, forneÃ§a um ficheiro XML vÃ¡lido\n";
+		exit(EXIT_FAILURE);
+	}
+
+	// Guardar o atributo "scene"
+	XMLElement *scene = doc.FirstChildElement("scene");
+	if (!scene) {
+		std::cout << "Formato do ficheiro invÃ¡lido\n";
+		exit(EXIT_FAILURE);
+	}
+
+	// Percorrer os atributos "model"
+	XMLElement *model = scene->FirstChildElement("model");
+	for (; model != nullptr; model = model->NextSiblingElement()) {
+		std::cout << model->Attribute("file") << std::endl;
+	}
+	return 1;
+
+
 	// init GLUT and the window
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);

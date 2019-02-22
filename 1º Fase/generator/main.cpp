@@ -1,17 +1,16 @@
 #include <iostream>
 #include <fstream>
 
-#define _USE_MATH_DEFINES
 #include <math.h>
 
-using namespace std;
+std::ofstream outFile;
 
-ofstream myfile;
-
+// Function that prints a vertex's info to outFile as "x y z\n"
 void printVertex(float x, float y, float z) {
-	myfile << x << " " << y << " " << z << "\n";
+	outFile << x << " " << y << " " << z << "\n";
 }
 
+// Function that prints a plane's info to outFile
 void printPlane(int distX, int distZ) {
 	printVertex(0, 0, -distZ / 2.0);
 	printVertex(-distX / 2.0, 0, 0);
@@ -31,6 +30,7 @@ void printPlane(int distX, int distZ) {
 }
 
 // FAZER AS DIVISIONS
+// Function that prints a box's info to outFile
 void printBox(int dimX, int dimY, int dimZ, int divisions) {
 	/* Triângulos da base */
 	printVertex(dimX/2.0, -dimY/2.0, dimZ/2.0);
@@ -84,6 +84,7 @@ void printBox(int dimX, int dimY, int dimZ, int divisions) {
 	printVertex(dimX/2.0, dimY/2.0, dimZ/2.0);
 }
 
+// Function that prints a sphere's info to outFile
 void printSphere(int radius, int slices, int stacks) {
 	double sliceDelta = 2 * M_PI / slices;
 	double betaDelta = M_PI_2 / (stacks / 2);
@@ -120,6 +121,7 @@ void printSphere(int radius, int slices, int stacks) {
 	}
 }
 
+// Function that prints a cone's info to outFile
 void printCone(int bottomRadius, int height, int slices, int stacks) {
 	double sliceDelta = 2 * M_PI / slices;
 
@@ -154,22 +156,22 @@ void printCone(int bottomRadius, int height, int slices, int stacks) {
 
 int main(int argc, char **argv) {
 	if (argc < 5) {
-		cout << "Indique a forma geométrica que pretende gerar e o ficheiro de destino\n";
+		std::cout << "Indique a forma geométrica que pretende gerar e o ficheiro de destino\n";
 		exit(EXIT_FAILURE);
 	}
 
-  	myfile.open(argv[argc-1]);
-	if (string(argv[1]) == "plane") {
+  	outFile.open(argv[argc-1]);
+	if (std::string(argv[1]) == "plane") {
 		if (argc != 5) {
-			cout << "Número de argumentos para o plano incorreto\n";
+			std::cout << "Número de argumentos para o plano incorreto\n";
 			exit(EXIT_FAILURE);
 		}
 
 		int distx = atoi(argv[2]), distz = atoi(argv[3]);
 		printPlane(distx, distz);
-	} else if (string(argv[1]) == "box") {
+	} else if (std::string(argv[1]) == "box") {
 		if (argc != 7 || argc != 6) {
-			cout << "Número de argumentos para a caixa incorreto\n";
+			std::cout << "Número de argumentos para a caixa incorreto\n";
 			exit(EXIT_FAILURE);
 		}
 
@@ -177,28 +179,28 @@ int main(int argc, char **argv) {
 		if (argc == 7)
 			divisions = atoi(argv[5]);
 		printBox(dimX, dimY, dimZ, divisions);
-	} else if (string(argv[1]) == "sphere") {
+	} else if (std::string(argv[1]) == "sphere") {
 		if (argc != 6) {
-			cout << "Número de argumentos para a esfera incorreto\n";
+			std::cout << "Número de argumentos para a esfera incorreto\n";
 			exit(EXIT_FAILURE);
 		}
 
 		int radius = atoi(argv[2]), slices = atoi(argv[3]), stacks = atoi(argv[4]);
 		printSphere(radius, slices, stacks);
-	} else if (string(argv[1]) == "cone") {
+	} else if (std::string(argv[1]) == "cone") {
 		if (argc != 7) {
-			cout << "Número de argumentos para o cone incorreto\n";
+			std::cout << "Número de argumentos para o cone incorreto\n";
 			exit(EXIT_FAILURE);
 		}
 
 		int bottomRadius = atoi(argv[2]), height = atoi(argv[3]), slices = atoi(argv[4]), stacks = atoi(argv[5]);
 		printCone(bottomRadius, height, slices, stacks);
 	} else {
-		cout << "Figura geométrica não suportada\n";
+		std::cout << "Figura geométrica não suportada\n";
 		exit(EXIT_FAILURE);
 	}
 
-  	myfile.close();
+  	outFile.close();
 
 	return 1;
 }

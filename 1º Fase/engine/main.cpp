@@ -1,10 +1,5 @@
-#ifdef __APPLE__
-#include <GLUT/glut.h>
-#else
 #include <GL/glut.h>
-#endif
 
-#define _USE_MATH_DEFINES
 #include <math.h>
 
 #include <iostream>
@@ -13,14 +8,14 @@
 #include <tuple>
 
 #include "tinyxml2.h"
-using namespace tinyxml2;
-
-GLdouble dist = 10, beta = M_PI_4, alpha = M_PI_4;
 
 typedef std::tuple<float, float, float> vertice;
-std::vector<vertice> allVertices;
 
-void changeSize(int w, int h) {
+std::vector<vertice> allVertices;
+GLdouble dist = 10, beta = M_PI_4, alpha = M_PI_4, xd = 0, zd = 0;
+
+// Function called when the window is resized
+void resizeWindow(int w, int h) {
 	// Prevent a divide by zero, when window is too short
 	// (you cant make a window with zero width).
 	if (h == 0)
@@ -31,6 +26,7 @@ void changeSize(int w, int h) {
 
 	// Set the projection matrix as current
 	glMatrixMode(GL_PROJECTION);
+
 	// Load Identity Matrix
 	glLoadIdentity();
 
@@ -75,6 +71,7 @@ void addVertices(std::ifstream &vertices) {
     }
 }
 
+// Function that draws the vertices to the screen
 void drawVertices() {
 	glBegin(GL_TRIANGLES);
 
@@ -87,32 +84,58 @@ void drawVertices() {
 	glEnd();
 }
 
-void renderScene(void) {
-	// clear buffers
+// Function called when it is necessary to render the scene
+void renderScene() {
+	// Clear buffers
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	// set the camera
+	// Set the camera
 	glLoadIdentity();
 	gluLookAt(dist*cos(beta)*sin(alpha), dist*sin(beta), dist*cos(beta)*cos(alpha),
 		      0.0, 0.0, 0.0,
 		      0.0f, 1.0f, 0.0f);
 
+	// Translate the vertices to the desired location
+	glTranslatef(xd, 0, zd);
+
+	// Draw the vertices that were loaded from the ".3d" files
 	drawVertices();
 
 	// End of frame
 	glutSwapBuffers();
 }
 
+// Function called when an ascii key is pressed
 void processKeys(unsigned char c, int xx, int yy) {
-	// put code to process regular keys in here
-	float deltaToMove = 0.3;
+	float deltaToZoom = 0.3;
+	float deltaToMove = 0.1;
 	switch (c) {
+		case 'w':
+			xd -= deltaToMove;
+			zd -= deltaToMove;
+			break;
+
+		case 'a':
+			xd -= deltaToMove;
+			zd += deltaToMove;
+			break;
+
+		case 's':
+			xd += deltaToMove;
+			zd += deltaToMove;
+			break;
+
+		case 'd':
+			xd += deltaToMove;
+			zd -= deltaToMove;
+			break;
+
 		case 'q':
-			dist += deltaToMove;
+			dist += deltaToZoom;
 			break;
 
 		case 'e':
-			dist -= deltaToMove;
+			dist -= deltaToZoom;
 			break;
 
 		default:
@@ -122,8 +145,8 @@ void processKeys(unsigned char c, int xx, int yy) {
 	glutPostRedisplay();
 }
 
+// Function called when a non-ascii key is pressed
 void processSpecialKeys(int key, int xx, int yy) {
-	// put code to process special keys in here
 	float deltaToMove = 0.1;
 	switch (key) {
 		case GLUT_KEY_UP:
@@ -156,22 +179,22 @@ int main(int argc, char **argv) {
 	}
 
 	// Carregar o ficheiro XML para a memória
-	XMLDocument doc;
-	XMLError e = doc.LoadFile(argv[1]);
-	if (e != XML_SUCCESS) {
+	tinyxml2::XMLDocument doc;
+	tinyxml2::XMLError e = doc.LoadFile(argv[1]);
+	if (e != tinyxml2::XML_SUCCESS) {
 		std::cout << e << "Por favor, forneça um ficheiro XML válido\n";
 		exit(EXIT_FAILURE);
 	}
 
 	// Guardar o atributo "scene"
-	XMLElement *scene = doc.FirstChildElement("scene");
+	tinyxml2::XMLElement *scene = doc.FirstChildElement("scene");
 	if (!scene) {
 		std::cout << "Formato do ficheiro inválido\n";
 		exit(EXIT_FAILURE);
 	}
 
 	// Percorrer os atributos "model"
-	XMLElement *model = scene->FirstChildElement("model");
+	tinyxml2::XMLElement *model = scene->FirstChildElement("model");
 	for (; model != nullptr; model = model->NextSiblingElement()) {
 		std::ifstream myfile;
 		myfile.open(model->Attribute("file"));
@@ -188,7 +211,7 @@ int main(int argc, char **argv) {
 
 	// Required callback registry 
 	glutDisplayFunc(renderScene);
-	glutReshapeFunc(changeSize);
+	glutReshapeFunc(resizeWindow);
 
 	// Callback registration for keyboard processing
 	glutKeyboardFunc(processKeys);

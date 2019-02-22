@@ -1,6 +1,9 @@
 #include <iostream>
 #include <fstream>
 
+#define _USE_MATH_DEFINES
+#include <math.h>
+
 using namespace std;
 
 ofstream myfile;
@@ -27,105 +30,127 @@ void printPlane(int distX, int distZ) {
 	printVertex(0, 0, distZ / 2.0);
 }
 
+// FAZER AS DIVISIONS
 void printBox(int dimX, int dimY, int dimZ, int divisions) {
 	/* Triângulos da base */
-	printVertex(dimX/2.0, 0, dimZ/2.0);
-	printVertex(-dimX/2.0, 0, -dimZ/2.0);
-	printVertex(dimX/2.0, 0, -dimZ/2.0);
+	printVertex(dimX/2.0, -dimY/2.0, dimZ/2.0);
+	printVertex(-dimX/2.0, -dimY/2.0, -dimZ/2.0);
+	printVertex(dimX/2.0, -dimY/2.0, -dimZ/2.0);
 
-	printVertex(-dimX/2.0, 0, -dimZ/2.0);
-	printVertex(dimX/2.0, 0, dimZ/2.0);
-	printVertex(-dimX/2.0, 0, dimZ/2.0);
+	printVertex(-dimX/2.0, -dimY/2.0, -dimZ/2.0);
+	printVertex(dimX/2.0, -dimY/2.0, dimZ/2.0);
+	printVertex(-dimX/2.0, -dimY/2.0, dimZ/2.0);
 
 	/* Triângulos laterais */
-	printVertex(dimX/2.0, dimY, dimZ/2.0);
-	printVertex(dimX/2.0, 0, dimZ/2.0);
-	printVertex(dimX/2.0, 0, -dimZ/2.0);
+	printVertex(dimX/2.0, dimY/2.0, dimZ/2.0);
+	printVertex(dimX/2.0, -dimY/2.0, dimZ/2.0);
+	printVertex(dimX/2.0, -dimY/2.0, -dimZ/2.0);
 
-	printVertex(dimX/2.0, dimY, dimZ/2.0);
-	printVertex(dimX/2.0, 0, -dimZ/2.0);
-	printVertex(dimX/2.0, dimY, -dimZ/2.0);
+	printVertex(dimX/2.0, dimY/2.0, dimZ/2.0);
+	printVertex(dimX/2.0, -dimY/2.0, -dimZ/2.0);
+	printVertex(dimX/2.0, dimY/2.0, -dimZ/2.0);
 
-	printVertex(dimX/2.0, dimY, -dimZ/2.0);
-	printVertex(dimX/2.0, 0, -dimZ/2.0);
-	printVertex(-dimX/2.0, 0, -dimZ/2.0);
+	printVertex(dimX/2.0, dimY/2.0, -dimZ/2.0);
+	printVertex(dimX/2.0, -dimY/2.0, -dimZ/2.0);
+	printVertex(-dimX/2.0, -dimY/2.0, -dimZ/2.0);
 
-	printVertex(dimX/2.0, dimY, -dimZ/2.0);
-	printVertex(-dimX/2.0, 0, -dimZ/2.0);
-	printVertex(-dimX/2.0, dimY, -dimZ/2.0);
+	printVertex(dimX/2.0, dimY/2.0, -dimZ/2.0);
+	printVertex(-dimX/2.0, -dimY/2.0, -dimZ/2.0);
+	printVertex(-dimX/2.0, dimY/2.0, -dimZ/2.0);
 
-	printVertex(-dimX/2.0, dimY, -dimZ/2.0);
-	printVertex(-dimX/2.0, 0, -dimZ/2.0);
-	printVertex(-dimX/2.0, 0, dimZ/2.0);
+	printVertex(-dimX/2.0, dimY/2.0, -dimZ/2.0);
+	printVertex(-dimX/2.0, -dimY/2.0, -dimZ/2.0);
+	printVertex(-dimX/2.0, -dimY/2.0, dimZ/2.0);
 
-	printVertex(-dimX/2.0, dimY, -dimZ/2.0);
-	printVertex(-dimX/2.0, 0, dimZ/2.0);
-	printVertex(-dimX/2.0, dimY, dimZ/2.0);
+	printVertex(-dimX/2.0, dimY/2.0, -dimZ/2.0);
+	printVertex(-dimX/2.0, -dimY/2.0, dimZ/2.0);
+	printVertex(-dimX/2.0, dimY/2.0, dimZ/2.0);
 
-	printVertex(-dimX/2.0, dimY, dimZ/2.0);
-	printVertex(-dimX/2.0, 0, dimZ/2.0);
-	printVertex(dimX/2.0, 0, dimZ/2.0);
+	printVertex(-dimX/2.0, dimY/2.0, dimZ/2.0);
+	printVertex(-dimX/2.0, -dimY/2.0, dimZ/2.0);
+	printVertex(dimX/2.0, -dimY/2.0, dimZ/2.0);
 
-	printVertex(-dimX/2.0, dimY, dimZ/2.0);
-	printVertex(dimX/2.0, 0, dimZ/2.0);
-	printVertex(dimX/2.0, dimY, dimZ/2.0);
+	printVertex(-dimX/2.0, dimY/2.0, dimZ/2.0);
+	printVertex(dimX/2.0, -dimY/2.0, dimZ/2.0);
+	printVertex(dimX/2.0, dimY/2.0, dimZ/2.0);
 
 	/* Triângulos do topo */
-	printVertex(dimX/2.0, dimY, dimZ/2.0);
-	printVertex(dimX/2.0, dimY, -dimZ/2.0);
-	printVertex(-dimX/2.0, dimY, -dimZ/2.0);
+	printVertex(dimX/2.0, dimY/2.0, dimZ/2.0);
+	printVertex(dimX/2.0, dimY/2.0, -dimZ/2.0);
+	printVertex(-dimX/2.0, dimY/2.0, -dimZ/2.0);
 
-	printVertex(-dimX/2.0, dimY, -dimZ/2.0);
-	printVertex(-dimX/2.0, dimY, dimZ/2.0);
-	printVertex(dimX/2.0, dimY, dimZ/2.0);
+	printVertex(-dimX/2.0, dimY/2.0, -dimZ/2.0);
+	printVertex(-dimX/2.0, dimY/2.0, dimZ/2.0);
+	printVertex(dimX/2.0, dimY/2.0, dimZ/2.0);
 }
 
 void printSphere(int radius, int slices, int stacks) {
+	double sliceDelta = 2 * M_PI / slices;
+	double betaDelta = M_PI_2 / (stacks / 2);
 
+	float r = radius;
+	for(int j = 0; j < ((float)stacks)/2; j++) {
+		float rnext = radius*cos(betaDelta*(j+1));
+		float h = radius*sin(betaDelta*(j));
+		float hnext = radius*sin(betaDelta*(j+1));
+		for (float i = 0.5*(j%2); i < slices + 0.5*(j%2); i++) {
+			// Festa dos tri�ngulos com os bicos para cima cupula superior
+			printVertex(r*sin(i*sliceDelta), h, r*cos(i*sliceDelta));
+			printVertex(r*sin((i + 1)*sliceDelta), h, r*cos((i + 1)*sliceDelta));
+			printVertex(rnext*sin((i + 0.5)*sliceDelta), hnext, rnext*cos((i + 0.5)*sliceDelta));
+		
+			// Festa dos tri�ngulos com os bicos para cima cupula inferior
+			printVertex(r*sin(i*sliceDelta), -h, r*cos(i*sliceDelta));
+			printVertex(rnext*sin((i + 0.5)*sliceDelta), -hnext, rnext*cos((i + 0.5)*sliceDelta));
+			printVertex(r*sin((i + 1)*sliceDelta), -h, r*cos((i + 1)*sliceDelta));
+
+			i += 0.5;
+			// Festa dos tri�ngulos com os bicos para baixo cupula superior
+			printVertex(rnext*sin((i + 1)*sliceDelta), hnext, rnext*cos((i + 1)*sliceDelta));
+			printVertex(rnext*sin(i*sliceDelta), hnext, rnext*cos(i*sliceDelta));
+			printVertex(r*sin((i + 0.5)*sliceDelta), h, r*cos((i + 0.5)*sliceDelta));
+
+			// Festa dos tri�ngulos com os bicos para baixo cupula inferior
+			printVertex(rnext*sin((i + 1)*sliceDelta), -hnext, rnext*cos((i + 1)*sliceDelta));
+			printVertex(r*sin((i + 0.5)*sliceDelta), -h, r*cos((i + 0.5)*sliceDelta));
+			printVertex(rnext*sin(i*sliceDelta), -hnext, rnext*cos(i*sliceDelta));
+			i -= 0.5;
+		}
+		r = rnext;
+	}
 }
 
 void printCone(int bottomRadius, int height, int slices, int stacks) {
+	double sliceDelta = 2 * M_PI / slices;
 
+	float r = bottomRadius;
+	for (float i = 0; i < slices; i++) {
+		printVertex(0, 0, 0);
+		printVertex(r*sin((i+1)*sliceDelta), 0, r*cos((i+1)*sliceDelta));
+		printVertex(r*sin(i*sliceDelta), 0, r*cos(i*sliceDelta));
+	}
+
+	float rnext = r - (bottomRadius/((float)stacks));
+	for(int j = 0; j < stacks; j++) {
+		float h = j*(((float)height)/stacks);
+		float hnext = (j+1)*(((float)height)/stacks);
+		for (float i = 0.5*(j%2); i < slices + 0.5*(j%2); i++) {
+			// Festa dos tri�ngulos com os bicos para cima
+			printVertex(r*sin(i*sliceDelta), h, r*cos(i*sliceDelta));
+			printVertex(r*sin((i + 1)*sliceDelta), h, r*cos((i + 1)*sliceDelta));
+			printVertex(rnext*sin((i + 0.5)*sliceDelta), hnext, rnext*cos((i + 0.5)*sliceDelta));
+
+			i += 0.5;
+			// Festa dos tri�ngulos com os bicos para baixo
+			printVertex(rnext*sin((i + 1)*sliceDelta), hnext, rnext*cos((i + 1)*sliceDelta));
+			printVertex(rnext*sin(i*sliceDelta), hnext, rnext*cos(i*sliceDelta));
+			printVertex(r*sin((i + 0.5)*sliceDelta), h, r*cos((i + 0.5)*sliceDelta));
+			i -= 0.5;
+		}
+		r = rnext;
+		rnext -= (bottomRadius/((float)stacks));
+	}
 }
-
-/*
-void drawCylinder(float radius, float height, int slices) {
-	// put code to draw cylinder in here
-	GLdouble alphaDelta = 2 * M_PI / slices;
-
-	glBegin(GL_TRIANGLES);
-	for (int i = 0; i < slices; i++) {
-		
-		// Circunfer�ncia de cima
-		glColor3f(1, 0.5, 0);
-		glVertex3f(0, height, 0);
-		glVertex3f(radius*sin(i*alphaDelta), height, radius*cos(i*alphaDelta));
-		glVertex3f(radius*sin((i + 1)*alphaDelta), height, radius*cos((i + 1)*alphaDelta));
-
-		// Festa dos tri�ngulos com os bicos para baixo
-		glColor3f(0.4, 0.4, 0.4);
-		glVertex3f(radius*sin((i + 1)*alphaDelta), height, radius*cos((i + 1)*alphaDelta));
-		glVertex3f(radius*sin(i*alphaDelta), height, radius*cos(i*alphaDelta));
-		glVertex3f(radius*sin((i + 0.5)*alphaDelta), 0, radius*cos((i + 0.5)*alphaDelta));
-	}
-
-	for (GLdouble i = 0.5; i < slices + 0.5; i++) {
-		
-		// Festa dos tri�ngulos com os bicos para cima
-		glColor3f(0.6, 0.6, 0.6);
-		glVertex3f(radius*sin(i*alphaDelta), 0, radius*cos(i*alphaDelta));
-		glVertex3f(radius*sin((i + 1)*alphaDelta), 0, radius*cos((i + 1)*alphaDelta));
-		glVertex3f(radius*sin((i + 0.5)*alphaDelta), height, radius*cos((i + 0.5)*alphaDelta));
-		
-		// Circunfer�ncia de baixo
-		glColor3f(0, 0.5, 1);
-		glVertex3f(0, 0, 0);
-		glVertex3f(radius*sin(i*alphaDelta), 0, radius*cos(i*alphaDelta));
-		glVertex3f(radius*sin((i - 1)*alphaDelta), 0, radius*cos((i - 1)*alphaDelta));
-	}
-
-	glEnd();
-} */
 
 int main(int argc, char **argv) {
 	if (argc < 5) {
@@ -143,12 +168,14 @@ int main(int argc, char **argv) {
 		int distx = atoi(argv[2]), distz = atoi(argv[3]);
 		printPlane(distx, distz);
 	} else if (string(argv[1]) == "box") {
-		if (argc != 7) {
+		if (argc != 7 || argc != 6) {
 			cout << "Número de argumentos para a caixa incorreto\n";
 			exit(EXIT_FAILURE);
 		}
 
-		int dimX = atoi(argv[2]), dimY = atoi(argv[3]), dimZ = atoi(argv[4]), divisions = atoi(argv[5]);
+		int dimX = atoi(argv[2]), dimY = atoi(argv[3]), dimZ = atoi(argv[4]), divisions = 0;
+		if (argc == 7)
+			divisions = atoi(argv[5]);
 		printBox(dimX, dimY, dimZ, divisions);
 	} else if (string(argv[1]) == "sphere") {
 		if (argc != 6) {
@@ -159,13 +186,13 @@ int main(int argc, char **argv) {
 		int radius = atoi(argv[2]), slices = atoi(argv[3]), stacks = atoi(argv[4]);
 		printSphere(radius, slices, stacks);
 	} else if (string(argv[1]) == "cone") {
-		if (argc != 5) {
+		if (argc != 7) {
 			cout << "Número de argumentos para o cone incorreto\n";
 			exit(EXIT_FAILURE);
 		}
 
-		int bottomRadius = atoi(argv[2]), heightradius = atoi(argv[3]), slices = atoi(argv[4]), stacks = atoi(argv[5]);
-		printCone(bottomRadius, heightradius, slices, stacks);
+		int bottomRadius = atoi(argv[2]), height = atoi(argv[3]), slices = atoi(argv[4]), stacks = atoi(argv[5]);
+		printCone(bottomRadius, height, slices, stacks);
 	} else {
 		cout << "Figura geométrica não suportada\n";
 		exit(EXIT_FAILURE);

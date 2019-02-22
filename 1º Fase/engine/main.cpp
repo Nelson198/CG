@@ -17,7 +17,7 @@ using namespace tinyxml2;
 
 GLdouble dist = 10, beta = M_PI_4, alpha = M_PI_4;
 
-typedef std::tuple<int, int, int> vertice;
+typedef std::tuple<float, float, float> vertice;
 std::vector<vertice> allVertices;
 
 void changeSize(int w, int h) {

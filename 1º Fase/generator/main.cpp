@@ -5,12 +5,12 @@
 
 std::ofstream outFile;
 
-// Function that prints a vertex's info to outFile as "x y z\n"
+// Function that prints a vertex's coordinates to outFile as "x y z\n"
 void printVertex(float x, float y, float z) {
 	outFile << x << " " << y << " " << z << "\n";
 }
 
-// Function that prints a plane's info to outFile
+// Function that prints a plane's vertices to outFile
 void printPlane(int distX, int distZ) {
 	printVertex(0, 0, -distZ / 2.0);
 	printVertex(-distX / 2.0, 0, 0);
@@ -30,9 +30,9 @@ void printPlane(int distX, int distZ) {
 }
 
 // FAZER AS DIVISIONS
-// Function that prints a box's info to outFile
+// Function that prints a box's vertices to outFile
 void printBox(int dimX, int dimY, int dimZ, int divisions) {
-	/* Triângulos da base */
+	// Bottom triangles
 	printVertex(dimX/2.0, -dimY/2.0, dimZ/2.0);
 	printVertex(-dimX/2.0, -dimY/2.0, -dimZ/2.0);
 	printVertex(dimX/2.0, -dimY/2.0, -dimZ/2.0);
@@ -41,7 +41,7 @@ void printBox(int dimX, int dimY, int dimZ, int divisions) {
 	printVertex(dimX/2.0, -dimY/2.0, dimZ/2.0);
 	printVertex(-dimX/2.0, -dimY/2.0, dimZ/2.0);
 
-	/* Triângulos laterais */
+	// Lateral triangles
 	printVertex(dimX/2.0, dimY/2.0, dimZ/2.0);
 	printVertex(dimX/2.0, -dimY/2.0, dimZ/2.0);
 	printVertex(dimX/2.0, -dimY/2.0, -dimZ/2.0);
@@ -74,7 +74,7 @@ void printBox(int dimX, int dimY, int dimZ, int divisions) {
 	printVertex(dimX/2.0, -dimY/2.0, dimZ/2.0);
 	printVertex(dimX/2.0, dimY/2.0, dimZ/2.0);
 
-	/* Triângulos do topo */
+	// Top triangles
 	printVertex(dimX/2.0, dimY/2.0, dimZ/2.0);
 	printVertex(dimX/2.0, dimY/2.0, -dimZ/2.0);
 	printVertex(-dimX/2.0, dimY/2.0, -dimZ/2.0);
@@ -84,48 +84,61 @@ void printBox(int dimX, int dimY, int dimZ, int divisions) {
 	printVertex(dimX/2.0, dimY/2.0, dimZ/2.0);
 }
 
-// Function that prints a sphere's info to outFile
+// Function that prints a sphere's vertices to outFile
 void printSphere(int radius, int slices, int stacks) {
+	// Angle of a single slice
 	double sliceDelta = 2 * M_PI / slices;
+	// Angle of a single stack
 	double betaDelta = M_PI_2 / (stacks / 2);
 
 	float r = radius;
-	for(int j = 0; j < ((float)stacks)/2; j++) {
-		float rnext = radius*cos(betaDelta*(j+1));
-		float h = radius*sin(betaDelta*(j));
-		float hnext = radius*sin(betaDelta*(j+1));
+	// Generate the lower and upper stacks at the same time
+	for (int j = 0; j < ((float)stacks)/2; j++) {
+		float nextR = radius*cos(betaDelta*(j+1));
+		float height = radius*sin(betaDelta*(j));
+		float nextHeight = radius*sin(betaDelta*(j+1));
+
+		// The 0.5 adjustement in the for loop is to alternate between the triangles of
+		// adjacent stacks, so that they align correctly with each other
 		for (float i = 0.5*(j%2); i < slices + 0.5*(j%2); i++) {
-			// Festa dos tri�ngulos com os bicos para cima cupula superior
-			printVertex(r*sin(i*sliceDelta), h, r*cos(i*sliceDelta));
-			printVertex(r*sin((i + 1)*sliceDelta), h, r*cos((i + 1)*sliceDelta));
-			printVertex(rnext*sin((i + 0.5)*sliceDelta), hnext, rnext*cos((i + 0.5)*sliceDelta));
+			// Triangles with the tip pointing up of the upper dome
+			printVertex(r*sin(i*sliceDelta), height, r*cos(i*sliceDelta));
+			printVertex(r*sin((i + 1)*sliceDelta), height, r*cos((i + 1)*sliceDelta));
+			printVertex(nextR*sin((i + 0.5)*sliceDelta), nextHeight, nextR*cos((i + 0.5)*sliceDelta));
 		
-			// Festa dos tri�ngulos com os bicos para cima cupula inferior
-			printVertex(r*sin(i*sliceDelta), -h, r*cos(i*sliceDelta));
-			printVertex(rnext*sin((i + 0.5)*sliceDelta), -hnext, rnext*cos((i + 0.5)*sliceDelta));
-			printVertex(r*sin((i + 1)*sliceDelta), -h, r*cos((i + 1)*sliceDelta));
+			// Triangles with the tip pointing up of the lower dome
+			printVertex(r*sin(i*sliceDelta), -height, r*cos(i*sliceDelta));
+			printVertex(nextR*sin((i + 0.5)*sliceDelta), -nextHeight, nextR*cos((i + 0.5)*sliceDelta));
+			printVertex(r*sin((i + 1)*sliceDelta), -height, r*cos((i + 1)*sliceDelta));
 
+
+			// This 0.5 adjustement (and the one below) is to offset the triangles in the same
+			// stack, so that they don't end up on top of each other
 			i += 0.5;
-			// Festa dos tri�ngulos com os bicos para baixo cupula superior
-			printVertex(rnext*sin((i + 1)*sliceDelta), hnext, rnext*cos((i + 1)*sliceDelta));
-			printVertex(rnext*sin(i*sliceDelta), hnext, rnext*cos(i*sliceDelta));
-			printVertex(r*sin((i + 0.5)*sliceDelta), h, r*cos((i + 0.5)*sliceDelta));
 
-			// Festa dos tri�ngulos com os bicos para baixo cupula inferior
-			printVertex(rnext*sin((i + 1)*sliceDelta), -hnext, rnext*cos((i + 1)*sliceDelta));
-			printVertex(r*sin((i + 0.5)*sliceDelta), -h, r*cos((i + 0.5)*sliceDelta));
-			printVertex(rnext*sin(i*sliceDelta), -hnext, rnext*cos(i*sliceDelta));
+			// Triangles with the tip pointing down of the upper dome
+			printVertex(nextR*sin((i + 1)*sliceDelta), nextHeight, nextR*cos((i + 1)*sliceDelta));
+			printVertex(nextR*sin(i*sliceDelta), nextHeight, nextR*cos(i*sliceDelta));
+			printVertex(r*sin((i + 0.5)*sliceDelta), height, r*cos((i + 0.5)*sliceDelta));
+
+			// Triangles with the tip pointing up of the lower dome
+			printVertex(nextR*sin((i + 1)*sliceDelta), -nextHeight, nextR*cos((i + 1)*sliceDelta));
+			printVertex(r*sin((i + 0.5)*sliceDelta), -height, r*cos((i + 0.5)*sliceDelta));
+			printVertex(nextR*sin(i*sliceDelta), -nextHeight, nextR*cos(i*sliceDelta));
+
 			i -= 0.5;
 		}
-		r = rnext;
+		r = nextR;
 	}
 }
 
-// Function that prints a cone's info to outFile
+// Function that prints a cone's vertices to outFile
 void printCone(int bottomRadius, int height, int slices, int stacks) {
+	// Angle of a single slice
 	double sliceDelta = 2 * M_PI / slices;
 
 	float r = bottomRadius;
+	// Draw the bottom circle
 	for (float i = 0; i < slices; i++) {
 		printVertex(0, 0, 0);
 		printVertex(r*sin((i+1)*sliceDelta), 0, r*cos((i+1)*sliceDelta));
@@ -133,17 +146,24 @@ void printCone(int bottomRadius, int height, int slices, int stacks) {
 	}
 
 	float rnext = r - (bottomRadius/((float)stacks));
+	// Draw each stack, one at a time
 	for(int j = 0; j < stacks; j++) {
 		float h = j*(((float)height)/stacks);
 		float hnext = (j+1)*(((float)height)/stacks);
+
+		// The 0.5 adjustement in the for loop is to alternate between the triangles of
+		// adjacent stacks, so that they align correctly with each other
 		for (float i = 0.5*(j%2); i < slices + 0.5*(j%2); i++) {
-			// Festa dos tri�ngulos com os bicos para cima
+			// Triangles with the tip pointing up
 			printVertex(r*sin(i*sliceDelta), h, r*cos(i*sliceDelta));
 			printVertex(r*sin((i + 1)*sliceDelta), h, r*cos((i + 1)*sliceDelta));
 			printVertex(rnext*sin((i + 0.5)*sliceDelta), hnext, rnext*cos((i + 0.5)*sliceDelta));
 
+			// This 0.5 adjustement (and the one below) is to offset the triangles in the same
+			// stack, so that they don't end up on top of each other
 			i += 0.5;
-			// Festa dos tri�ngulos com os bicos para baixo
+
+			// Triangles with the tip pointing down
 			printVertex(rnext*sin((i + 1)*sliceDelta), hnext, rnext*cos((i + 1)*sliceDelta));
 			printVertex(rnext*sin(i*sliceDelta), hnext, rnext*cos(i*sliceDelta));
 			printVertex(r*sin((i + 0.5)*sliceDelta), h, r*cos((i + 0.5)*sliceDelta));
@@ -170,7 +190,7 @@ int main(int argc, char **argv) {
 		int distx = atoi(argv[2]), distz = atoi(argv[3]);
 		printPlane(distx, distz);
 	} else if (std::string(argv[1]) == "box") {
-		if (argc != 7 || argc != 6) {
+		if (argc != 7 && argc != 6) {
 			std::cout << "Número de argumentos para a caixa incorreto\n";
 			exit(EXIT_FAILURE);
 		}
@@ -199,7 +219,6 @@ int main(int argc, char **argv) {
 		std::cout << "Figura geométrica não suportada\n";
 		exit(EXIT_FAILURE);
 	}
-
   	outFile.close();
 
 	return 1;

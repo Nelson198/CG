@@ -9,61 +9,39 @@
 
 #include "tinyxml2.h"
 
-typedef std::tuple<float, float, float> vertice;
+typedef std::tuple<float, float, float> vertex;
 
-std::vector<vertice> allVertices;
+std::vector<vertex> allVertices;
 GLdouble dist = 10, beta = M_PI_4, alpha = M_PI_4, xd = 0, zd = 0;
 
-// Function called when the window is resized
-void resizeWindow(int w, int h) {
-	// Prevent a divide by zero, when window is too short
-	// (you cant make a window with zero width).
-	if (h == 0)
-		h = 1;
-
-	// compute window's aspect ratio 
-	float ratio = w * 1.0 / h;
-
-	// Set the projection matrix as current
-	glMatrixMode(GL_PROJECTION);
-
-	// Load Identity Matrix
-	glLoadIdentity();
-
-	// Set the viewport to be the entire window
-	glViewport(0, 0, w, h);
-
-	// Set perspective
-	gluPerspective(45.0f, ratio, 1.0f, 1000.0f);
-
-	// return to the model view matrix mode
-	glMatrixMode(GL_MODELVIEW);
-}
-
-vertice extractVertice(std::string s) {
+// Function that creates a vertex object from its string representation "x y z"
+vertex extractVertice(std::string s) {
 	std::string delimiter = " ";
 	float x, y, z;
 	int pos;
 	std::string token;
 
-	// x
+	// Process the x coordinate
 	pos = s.find(delimiter);
 	token = s.substr(0, pos);
 	x = atof(token.c_str());
 	s.erase(0, pos + delimiter.length());
-	// y
+
+	// Process the y coordinate
 	pos = s.find(delimiter);
 	token = s.substr(0, pos);
 	y = atof(token.c_str());
 	s.erase(0, pos + delimiter.length());
-	// z
+
+	// Process the z coordinate
 	pos = s.find(delimiter);
 	token = s.substr(0, pos);
 	z = atof(token.c_str());
 
-	return vertice(x,y,z);
+	return vertex(x,y,z);
 }
 
+// Function that processes and adds the vertices from a file to the allVertices vector
 void addVertices(std::ifstream &vertices) {
     char v[100];
     while (vertices.getline(v, 100)) {
@@ -71,12 +49,12 @@ void addVertices(std::ifstream &vertices) {
     }
 }
 
-// Function that draws the vertices to the screen
+// Function that draws the loaded vertices to the screen
 void drawVertices() {
 	glBegin(GL_TRIANGLES);
 
-	for(vertice v: allVertices) {
-		// Dar uma cor aleatória a cada triângulo (AMAZING!!!)
+	for(vertex v: allVertices) {
+		// Give a different color to every vertex, so that a gradient effect is applied
 		glColor3f(rand() / (float) RAND_MAX, rand() / (float) RAND_MAX, rand() / (float) RAND_MAX);
 		glVertex3f(std::get<0>(v), std::get<1>(v), std::get<2>(v));
 	}
@@ -110,30 +88,36 @@ void processKeys(unsigned char c, int xx, int yy) {
 	float deltaToZoom = 0.3;
 	float deltaToMove = 0.1;
 	switch (c) {
+		// Move the vertices in the (-deltaToMove, 0, -deltaToMove) direction
 		case 'w':
 			xd -= deltaToMove;
 			zd -= deltaToMove;
 			break;
 
+		// Move the vertices in the (-deltaToMove, 0, deltaToMove) direction
 		case 'a':
 			xd -= deltaToMove;
 			zd += deltaToMove;
 			break;
 
+		// Move the vertices in the (deltaToMove, 0, deltaToMove) direction
 		case 's':
 			xd += deltaToMove;
 			zd += deltaToMove;
 			break;
 
+		// Move the vertices in the (deltaToMove, 0, -deltaToMove) direction
 		case 'd':
 			xd += deltaToMove;
 			zd -= deltaToMove;
 			break;
 
+		// Move the camera closer to (0, 0, 0)
 		case 'q':
 			dist += deltaToZoom;
 			break;
 
+		// Move the camera further from (0, 0, 0)
 		case 'e':
 			dist -= deltaToZoom;
 			break;
@@ -149,18 +133,22 @@ void processKeys(unsigned char c, int xx, int yy) {
 void processSpecialKeys(int key, int xx, int yy) {
 	float deltaToMove = 0.1;
 	switch (key) {
+		// Move the camera up
 		case GLUT_KEY_UP:
 			beta += deltaToMove;
 			break;
 
+		// Move the camera down
 		case GLUT_KEY_DOWN:
 			beta -= deltaToMove;
 			break;
 
+		// Move the camera to the left
 		case GLUT_KEY_LEFT:
 			alpha -= deltaToMove;
 			break;
 
+		// Move the camera to the right
 		case GLUT_KEY_RIGHT:
 			alpha += deltaToMove;
 			break;
@@ -172,56 +160,81 @@ void processSpecialKeys(int key, int xx, int yy) {
 	glutPostRedisplay();
 }
 
+// Function called when the window is resized
+void resizeWindow(int w, int h) {
+	// Prevent a divide by zero, when window is too short
+	// (you cant make a window with zero width).
+	if (h == 0)
+		h = 1;
+
+	// Compute the window's aspect ratio 
+	float ratio = w * 1.0 / h;
+
+	// Set the projection matrix as current
+	glMatrixMode(GL_PROJECTION);
+
+	// Load Identity Matrix
+	glLoadIdentity();
+
+	// Set the viewport to be the entire window
+	glViewport(0, 0, w, h);
+
+	// Set the perspective
+	gluPerspective(45.0f, ratio, 1.0f, 1000.0f);
+
+	// Return to the model view matrix mode
+	glMatrixMode(GL_MODELVIEW);
+}
+
 int main(int argc, char **argv) {
 	if (argc != 2) {
 		std::cout << "Por favor, forneça um ficheiro XML\n";
 		exit(EXIT_FAILURE);
 	}
 
-	// Carregar o ficheiro XML para a memória
+	// Load the XML file to memory
 	tinyxml2::XMLDocument doc;
 	tinyxml2::XMLError e = doc.LoadFile(argv[1]);
 	if (e != tinyxml2::XML_SUCCESS) {
-		std::cout << e << "Por favor, forneça um ficheiro XML válido\n";
+		std::cout << "Por favor, forneça um ficheiro XML válido\n";
 		exit(EXIT_FAILURE);
 	}
 
-	// Guardar o atributo "scene"
+	// Save the structure associated to the attribute "scene"
 	tinyxml2::XMLElement *scene = doc.FirstChildElement("scene");
 	if (!scene) {
 		std::cout << "Formato do ficheiro inválido\n";
 		exit(EXIT_FAILURE);
 	}
 
-	// Percorrer os atributos "model"
-	tinyxml2::XMLElement *model = scene->FirstChildElement("model");
-	for (; model != nullptr; model = model->NextSiblingElement()) {
+	// Go through all "model" structures
+	for (tinyxml2::XMLElement *model = scene->FirstChildElement("model"); model != nullptr; model = model->NextSiblingElement()) {
 		std::ifstream myfile;
 		myfile.open(model->Attribute("file"));
 		addVertices(myfile);
 		myfile.close();
 	}
 
-	// init GLUT and the window
+	// Init GLUT and the window
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
 	glutInitWindowPosition(100, 100);
 	glutInitWindowSize(800, 800);
 	glutCreateWindow("Fase1TP - Engine");
 
-	// Required callback registry 
+	// Register the required callback 
 	glutDisplayFunc(renderScene);
 	glutReshapeFunc(resizeWindow);
 
-	// Callback registration for keyboard processing
+	// Resgister callback for keyboard processing
 	glutKeyboardFunc(processKeys);
 	glutSpecialFunc(processSpecialKeys);
 
-	// OpenGL settings
+	// Set OpenGL settings
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 
-	// enter GLUT's main cycle
+	// Enter GLUT's main cycle
 	glutMainLoop();
 
 	return 1;

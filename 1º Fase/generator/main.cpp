@@ -11,22 +11,22 @@ void printVertex(float x, float y, float z) {
 }
 
 // Function that prints a plane's vertices to outFile
-void printPlane(int distX, int distZ) {
-	printVertex(0, 0, -distZ / 2.0);
-	printVertex(-distX / 2.0, 0, 0);
-	printVertex(0, 0, distZ/2.0);
+void printPlane(int dist) {
+	printVertex(dist/2.0, 0, 0);
+	printVertex(0, 0, -dist/2.0);
+	printVertex(-dist/2.0, 0, 0);
+	
+	printVertex(-dist/2.0, 0, 0);
+	printVertex(0, 0, dist/2.0);
+	printVertex(dist/2.0, 0, 0);
 
-	printVertex(0, 0, distZ / 2.0);
-	printVertex(-distX / 2.0, 0, 0);
-	printVertex(0, 0, -distZ / 2.0);
+	printVertex(dist/2.0, 0, 0);
+	printVertex(0, 0, dist/2.0);
+	printVertex(-dist/2.0, 0, 0);
 
-	printVertex(0, 0, distZ/2.0);
-	printVertex(distX/2.0, 0, 0);
-	printVertex(0, 0, -distZ / 2.0);
-
-	printVertex(0, 0, -distZ / 2.0);
-	printVertex(distX / 2.0, 0, 0);
-	printVertex(0, 0, distZ / 2.0);
+	printVertex(-dist/2.0, 0, 0);
+	printVertex(0, 0, -dist/2.0);
+	printVertex(dist/2.0, 0, 0);
 }
 
 // FAZER AS DIVISIONS

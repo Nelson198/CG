@@ -15,7 +15,7 @@ void printPlane(int dist) {
 	printVertex(dist/2.0, 0, 0);
 	printVertex(0, 0, -dist/2.0);
 	printVertex(-dist/2.0, 0, 0);
-	
+
 	printVertex(-dist/2.0, 0, 0);
 	printVertex(0, 0, dist/2.0);
 	printVertex(dist/2.0, 0, 0);
@@ -105,7 +105,7 @@ void printSphere(int radius, int slices, int stacks) {
 			printVertex(r*sin(i*sliceDelta), height, r*cos(i*sliceDelta));
 			printVertex(r*sin((i + 1)*sliceDelta), height, r*cos((i + 1)*sliceDelta));
 			printVertex(nextR*sin((i + 0.5)*sliceDelta), nextHeight, nextR*cos((i + 0.5)*sliceDelta));
-		
+
 			// Triangles with the tip pointing up of the lower dome
 			printVertex(r*sin(i*sliceDelta), -height, r*cos(i*sliceDelta));
 			printVertex(nextR*sin((i + 0.5)*sliceDelta), -nextHeight, nextR*cos((i + 0.5)*sliceDelta));
@@ -175,20 +175,20 @@ void printCone(int bottomRadius, int height, int slices, int stacks) {
 }
 
 int main(int argc, char **argv) {
-	if (argc < 5) {
+	if (argc < 4) {
 		std::cout << "Indique a forma geométrica que pretende gerar e o ficheiro de destino\n";
 		exit(EXIT_FAILURE);
 	}
 
   	outFile.open(argv[argc-1]);
 	if (std::string(argv[1]) == "plane") {
-		if (argc != 5) {
+		if (argc != 4) {
 			std::cout << "Número de argumentos para o plano incorreto\n";
 			exit(EXIT_FAILURE);
 		}
 
-		int distx = atoi(argv[2]), distz = atoi(argv[3]);
-		printPlane(distx, distz);
+		int dist = atoi(argv[2]);
+		printPlane(dist);
 	} else if (std::string(argv[1]) == "box") {
 		if (argc != 7 && argc != 6) {
 			std::cout << "Número de argumentos para a caixa incorreto\n";

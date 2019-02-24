@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 
+#define _USE_MATH_DEFINES
 #include <math.h>
 
 std::ofstream outFile;
@@ -29,59 +30,82 @@ void printPlane(int dist) {
 	printVertex(dist/2.0, 0, 0);
 }
 
-// FAZER AS DIVISIONS
 // Function that prints a box's vertices to outFile
 void printBox(int dimX, int dimY, int dimZ, int divisions) {
-	// Bottom triangles
-	printVertex(dimX/2.0, -dimY/2.0, dimZ/2.0);
-	printVertex(-dimX/2.0, -dimY/2.0, -dimZ/2.0);
-	printVertex(dimX/2.0, -dimY/2.0, -dimZ/2.0);
+	for (int i = 0; i < divisions; i++) {
+		for (int j = 0; j < divisions; j++) {
+			double xOffset, yOffset, zOffset, nextXOffset, nextYOffset, nextZOffset;;
 
-	printVertex(-dimX/2.0, -dimY/2.0, -dimZ/2.0);
-	printVertex(dimX/2.0, -dimY/2.0, dimZ/2.0);
-	printVertex(-dimX/2.0, -dimY/2.0, dimZ/2.0);
+			// Top triangles
+			// (x, +y, z)
+			xOffset = dimX/2.0 - i*dimX/(float)divisions, yOffset = dimY/2.0, zOffset = dimZ/2.0 - j*dimZ/(float)divisions;
+			nextXOffset = xOffset - dimX/(float)divisions, nextZOffset = zOffset - dimZ/(float)divisions;
+			printVertex(xOffset, yOffset, zOffset);
+			printVertex(xOffset, yOffset, nextZOffset);
+			printVertex(nextXOffset, yOffset, nextZOffset);
 
-	// Lateral triangles
-	printVertex(dimX/2.0, dimY/2.0, dimZ/2.0);
-	printVertex(dimX/2.0, -dimY/2.0, dimZ/2.0);
-	printVertex(dimX/2.0, -dimY/2.0, -dimZ/2.0);
+			printVertex(nextXOffset, yOffset, nextZOffset);
+			printVertex(nextXOffset, yOffset, zOffset);
+			printVertex(xOffset, yOffset, zOffset);
 
-	printVertex(dimX/2.0, dimY/2.0, dimZ/2.0);
-	printVertex(dimX/2.0, -dimY/2.0, -dimZ/2.0);
-	printVertex(dimX/2.0, dimY/2.0, -dimZ/2.0);
+			// Lateral triangles
+			// (+x, y, z)
+			xOffset = dimX/2.0, yOffset = dimY/2.0 - i*dimY/(float)divisions, zOffset = dimZ/2.0 - j*dimZ/(float)divisions;
+			nextYOffset = yOffset - dimY/(float)divisions, nextZOffset = zOffset - dimZ/(float)divisions;
+			printVertex(xOffset, yOffset, zOffset);
+			printVertex(xOffset, nextYOffset, zOffset);
+			printVertex(xOffset, nextYOffset, nextZOffset);
 
-	printVertex(dimX/2.0, dimY/2.0, -dimZ/2.0);
-	printVertex(dimX/2.0, -dimY/2.0, -dimZ/2.0);
-	printVertex(-dimX/2.0, -dimY/2.0, -dimZ/2.0);
+			printVertex(xOffset, yOffset, zOffset);
+			printVertex(xOffset, nextYOffset, nextZOffset);
+			printVertex(xOffset, yOffset, nextZOffset);
 
-	printVertex(dimX/2.0, dimY/2.0, -dimZ/2.0);
-	printVertex(-dimX/2.0, -dimY/2.0, -dimZ/2.0);
-	printVertex(-dimX/2.0, dimY/2.0, -dimZ/2.0);
+			// (x, y, -z)
+			xOffset = dimX/2.0 - j*dimX/(float)divisions, yOffset = dimY/2.0 - i*dimY/(float)divisions, zOffset = -dimZ/2.0;
+			nextXOffset = xOffset - dimX/(float)divisions, nextYOffset = yOffset - dimY/(float)divisions;
+			printVertex(xOffset, yOffset, zOffset);
+			printVertex(xOffset, nextYOffset, zOffset);
+			printVertex(nextXOffset, nextYOffset, zOffset);
 
-	printVertex(-dimX/2.0, dimY/2.0, -dimZ/2.0);
-	printVertex(-dimX/2.0, -dimY/2.0, -dimZ/2.0);
-	printVertex(-dimX/2.0, -dimY/2.0, dimZ/2.0);
+			printVertex(xOffset, yOffset, zOffset);
+			printVertex(nextXOffset, nextYOffset, zOffset);
+			printVertex(nextXOffset, yOffset, zOffset);
 
-	printVertex(-dimX/2.0, dimY/2.0, -dimZ/2.0);
-	printVertex(-dimX/2.0, -dimY/2.0, dimZ/2.0);
-	printVertex(-dimX/2.0, dimY/2.0, dimZ/2.0);
+			// (-x, y, z)
+			xOffset = -dimX/2.0, yOffset = dimY/2.0 - i*dimY/(float)divisions, zOffset = -dimZ/2.0 + j*dimZ/(float)divisions;
+			nextYOffset = yOffset - dimY/(float)divisions, nextZOffset = zOffset + dimZ/(float)divisions;
+			printVertex(xOffset, yOffset, zOffset);
+			printVertex(xOffset, nextYOffset, zOffset);
+			printVertex(xOffset, nextYOffset, nextZOffset);
 
-	printVertex(-dimX/2.0, dimY/2.0, dimZ/2.0);
-	printVertex(-dimX/2.0, -dimY/2.0, dimZ/2.0);
-	printVertex(dimX/2.0, -dimY/2.0, dimZ/2.0);
+			printVertex(xOffset, yOffset, zOffset);
+			printVertex(xOffset, nextYOffset, nextZOffset);
+			printVertex(xOffset, yOffset, nextZOffset);
 
-	printVertex(-dimX/2.0, dimY/2.0, dimZ/2.0);
-	printVertex(dimX/2.0, -dimY/2.0, dimZ/2.0);
-	printVertex(dimX/2.0, dimY/2.0, dimZ/2.0);
+			// (x, y, +z)
+			xOffset = -dimX/2.0 + j*dimX/(float)divisions, yOffset = dimY/2.0 - i*dimY/(float)divisions, zOffset = dimZ/2.0;
+			nextXOffset = xOffset + dimX/(float)divisions, nextYOffset = yOffset - dimY/(float)divisions;
+			printVertex(xOffset, yOffset, zOffset);
+			printVertex(xOffset, nextYOffset, zOffset);
+			printVertex(nextXOffset, nextYOffset, zOffset);
 
-	// Top triangles
-	printVertex(dimX/2.0, dimY/2.0, dimZ/2.0);
-	printVertex(dimX/2.0, dimY/2.0, -dimZ/2.0);
-	printVertex(-dimX/2.0, dimY/2.0, -dimZ/2.0);
+			printVertex(xOffset, yOffset, zOffset);
+			printVertex(nextXOffset, nextYOffset, zOffset);
+			printVertex(nextXOffset, yOffset, zOffset);
 
-	printVertex(-dimX/2.0, dimY/2.0, -dimZ/2.0);
-	printVertex(-dimX/2.0, dimY/2.0, dimZ/2.0);
-	printVertex(dimX/2.0, dimY/2.0, dimZ/2.0);
+			// Bottom triangles
+			// (x, -y, z)
+			xOffset = dimX/2.0 - i*dimX/(float)divisions, yOffset = -dimY/2.0, zOffset = dimZ/2.0 - j*dimZ/(float)divisions;
+			nextXOffset = xOffset - dimX/(float)divisions, nextZOffset = zOffset - dimZ/(float)divisions;
+			printVertex(xOffset, yOffset, zOffset);
+			printVertex(nextXOffset, yOffset, nextZOffset);
+			printVertex(xOffset, yOffset, nextZOffset);
+
+			printVertex(nextXOffset, yOffset, nextZOffset);
+			printVertex(xOffset, yOffset, zOffset);
+			printVertex(nextXOffset, yOffset, zOffset);
+		}
+	}
 }
 
 // Function that prints a sphere's vertices to outFile
@@ -195,7 +219,7 @@ int main(int argc, char **argv) {
 			exit(EXIT_FAILURE);
 		}
 
-		int dimX = atoi(argv[2]), dimY = atoi(argv[3]), dimZ = atoi(argv[4]), divisions = 0;
+		int dimX = atoi(argv[2]), dimY = atoi(argv[3]), dimZ = atoi(argv[4]), divisions = 1;
 		if (argc == 7)
 			divisions = atoi(argv[5]);
 		printBox(dimX, dimY, dimZ, divisions);

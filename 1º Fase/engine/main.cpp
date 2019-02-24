@@ -1,5 +1,10 @@
+#ifdef __APPLE__
+#include <GLUT/glut.h>
+#else
 #include <GL/glut.h>
+#endif
 
+#define _USE_MATH_DEFINES
 #include <math.h>
 
 #include <iostream>
@@ -75,6 +80,24 @@ void renderScene() {
 
 	// Translate the vertices to the desired location
 	glTranslatef(xd, 0, zd);
+
+	/*
+	// Draw the axis
+	glBegin(GL_LINES);
+		// x
+		glColor3f(1.0, 0.0, 0.0);
+		glVertex3f(-100.0, 0.0, 0.0);
+		glVertex3f(100.0, 0.0, 0.0);
+		// y
+		glColor3f(0.0, 1.0, 0.0);
+		glVertex3f(0.0, -100.0, 0.0);
+		glVertex3f(0.0, 100.0, 0.0);
+		// z
+		glColor3f(0.0, 0.0, 1.0);
+		glVertex3f(0.0, 0.0, -100.0);
+		glVertex3f(0.0, 0.0, 100.0);
+	glEnd();
+	*/
 
 	// Draw the vertices that were loaded from the ".3d" files
 	drawVertices();

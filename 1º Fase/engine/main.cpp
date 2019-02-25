@@ -1,3 +1,5 @@
+#include <stdlib.h>
+
 #ifdef __APPLE__
 #include <GLUT/glut.h>
 #else
@@ -66,6 +68,22 @@ void drawVertices() {
 
 	glEnd();
 }
+void drawAxis() {
+	glBegin(GL_LINES);
+		// x
+		glColor3f(1.0, 0.0, 0.0);
+		glVertex3f(-100.0, 0.0, 0.0);
+		glVertex3f(100.0, 0.0, 0.0);
+		// y
+		glColor3f(0.0, 1.0, 0.0);
+		glVertex3f(0.0, -100.0, 0.0);
+		glVertex3f(0.0, 100.0, 0.0);
+		// z
+		glColor3f(0.0, 0.0, 1.0);
+		glVertex3f(0.0, 0.0, -100.0);
+		glVertex3f(0.0, 0.0, 100.0);
+	glEnd();
+}
 
 // Function called when it is necessary to render the scene
 void renderScene() {
@@ -81,23 +99,8 @@ void renderScene() {
 	// Translate the vertices to the desired location
 	glTranslatef(xd, 0, zd);
 
-	/*
 	// Draw the axis
-	glBegin(GL_LINES);
-		// x
-		glColor3f(1.0, 0.0, 0.0);
-		glVertex3f(-100.0, 0.0, 0.0);
-		glVertex3f(100.0, 0.0, 0.0);
-		// y
-		glColor3f(0.0, 1.0, 0.0);
-		glVertex3f(0.0, -100.0, 0.0);
-		glVertex3f(0.0, 100.0, 0.0);
-		// z
-		glColor3f(0.0, 0.0, 1.0);
-		glVertex3f(0.0, 0.0, -100.0);
-		glVertex3f(0.0, 0.0, 100.0);
-	glEnd();
-	*/
+	drawAxis();
 
 	// Draw the vertices that were loaded from the ".3d" files
 	drawVertices();
@@ -143,6 +146,21 @@ void processKeys(unsigned char c, int xx, int yy) {
 		// Move the camera further from (0, 0, 0)
 		case 'e':
 			dist -= deltaToZoom;
+			break;
+
+		// Show triangles as filled shapes
+		case 'f':
+			glPolygonMode(GL_FRONT, GL_FILL);
+			break;
+
+		// Show triangles' edges 
+		case 'l':
+			glPolygonMode(GL_FRONT, GL_LINE);
+			break;
+
+		// Show triangles' vertices
+		case 'p':
+			glPolygonMode(GL_FRONT, GL_POINT);
 			break;
 
 		default:

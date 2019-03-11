@@ -12,13 +12,18 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include <tuple>
 
 #include "tinyxml2.h"
 
-typedef std::tuple<float, float, float> vertex;
+typedef struct {
+	float x;
+	float y;
+	float z;
+} vertex;
 
-std::vector<vertex> allVertices;
+typedef std::vector<vertex> vertices;
+
+vertices allVertices;
 GLdouble dist = 10, beta = M_PI_4, alpha = M_PI_4, xd = 0, zd = 0;
 
 // Function that creates a vertex object from its string representation "x y z"
@@ -45,7 +50,7 @@ vertex extractVertice(std::string s) {
 	token = s.substr(0, pos);
 	z = atof(token.c_str());
 
-	return vertex(x,y,z);
+	return vertex{x,y,z};
 }
 
 // Function that processes and adds the vertices from a file to the allVertices vector
@@ -63,7 +68,7 @@ void drawVertices() {
 	for(vertex v: allVertices) {
 		// Give a different color to every vertex, so that a gradient effect is applied
 		glColor3f(rand() / (float) RAND_MAX, rand() / (float) RAND_MAX, rand() / (float) RAND_MAX);
-		glVertex3f(std::get<0>(v), std::get<1>(v), std::get<2>(v));
+		glVertex3f(v.x, v.y, v.z);
 	}
 
 	glEnd();
@@ -229,12 +234,11 @@ void resizeWindow(int w, int h) {
 	glMatrixMode(GL_MODELVIEW);
 }
 
-int main(int argc, char **argv) {
-	if (argc != 2) {
-		std::cout << "Por favor, forneça um ficheiro XML\n";
-		exit(EXIT_FAILURE);
-	}
+void processGroup() {
+	/* Completar */
+}
 
+void processXML(char **argv) {
 	// Load the XML file to memory
 	tinyxml2::XMLDocument doc;
 	tinyxml2::XMLError e = doc.LoadFile(argv[1]);
@@ -258,12 +262,26 @@ int main(int argc, char **argv) {
 		myfile.close();
 	}
 
+	// Process transformations
+	processGroup();
+
+}
+
+int main(int argc, char **argv) {
+	if (argc != 2) {
+		std::cout << "Por favor, forneça um ficheiro XML\n";
+		exit(EXIT_FAILURE);
+	}
+
+	// Processing XML file
+	processXML(argv);
+
 	// Init GLUT and the window
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
 	glutInitWindowPosition(100, 100);
 	glutInitWindowSize(800, 800);
-	glutCreateWindow("Fase1TP - Engine");
+	glutCreateWindow("Fase2TP - Engine");
 
 	// Register the required callback 
 	glutDisplayFunc(renderScene);

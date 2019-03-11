@@ -19,15 +19,31 @@ typedef struct {
 	float x;
 	float y;
 	float z;
-} vertex;
+} Vertex;
+typedef std::vector<Vertex> Vertices;
 
-typedef std::vector<vertex> vertices;
+typedef struct {
+	char type;  // It can be: T - Translate, R - Rotate, S - Scale, C - Color
+	int param1; // These parameters depend on the type
+	int param2;
+	int param3;
+	int param4;
+} Transformation;
+typedef std::vector<Transformation> Transformations;
 
-vertices allVertices;
+typedef struct group {
+	Transformations trans;
+	Vertices vert;
+	std::vector<struct group> subGroups;
+} Group;
+typedef std::vector<Group> Groups;
+
+Groups allGroups;
+
 GLdouble dist = 10, beta = M_PI_4, alpha = M_PI_4, xd = 0, zd = 0;
 
 // Function that creates a vertex object from its string representation "x y z"
-vertex extractVertice(std::string s) {
+Vertex extractVertice(std::string s) {
 	std::string delimiter = " ";
 	float x, y, z;
 	int pos;
@@ -50,14 +66,14 @@ vertex extractVertice(std::string s) {
 	token = s.substr(0, pos);
 	z = atof(token.c_str());
 
-	return vertex{x,y,z};
+	return Vertex{x,y,z};
 }
 
 // Function that processes and adds the vertices from a file to the allVertices vector
-void addVertices(std::ifstream &vertices) {
+void addVertices(std::ifstream &vertices, Group *group) {
     char v[100];
     while (vertices.getline(v, 100)) {
-        allVertices.push_back(extractVertice(v));
+        group->vert.push_back(extractVertice(v));
     }
 }
 
@@ -65,7 +81,7 @@ void addVertices(std::ifstream &vertices) {
 void drawVertices() {
 	glBegin(GL_TRIANGLES);
 
-	for(vertex v: allVertices) {
+	for (Vertex v: allGroups.at(0).vert) {
 		// Give a different color to every vertex, so that a gradient effect is applied
 		glColor3f(rand() / (float) RAND_MAX, rand() / (float) RAND_MAX, rand() / (float) RAND_MAX);
 		glVertex3f(v.x, v.y, v.z);
@@ -234,10 +250,43 @@ void resizeWindow(int w, int h) {
 	glMatrixMode(GL_MODELVIEW);
 }
 
-void processGroup() {
-	/* Completar */
+// Function that adds a group's information to its parent's subGroups (or allGroups if none)
+void addGroup(tinyxml2::XMLElement *group, Group *parent) {
+	Group currentG;
+	for (tinyxml2::XMLElement *elem = group->FirstChildElement(); elem != nullptr; elem = elem->NextSiblingElement()) {
+		std::string elemName = elem->Value();
+		if (elemName == "translate") {
+			Transformation t = {type: 'T', param1: elem->IntAttribute("X"), param2: elem->IntAttribute("Y"), param3: elem->IntAttribute("Z")};
+			currentG.trans.push_back(t);
+		} else if (elemName == "rotate") {
+			Transformation t = {type: 'R', param1: elem->IntAttribute("angle"), param2: elem->IntAttribute("axisX"), param3: elem->IntAttribute("axisY"), param4: elem->IntAttribute("axisZ")};
+			currentG.trans.push_back(t);			
+		} else if (elemName == "scale") {
+			Transformation t = {type: 'S', param1: elem->IntAttribute("X"), param2: elem->IntAttribute("Y"), param3: elem->IntAttribute("Z")};
+			currentG.trans.push_back(t);
+		} else if (elemName == "color") {
+			Transformation t = {type: 'C', param1: elem->IntAttribute("R"), param2: elem->IntAttribute("G"), param3: elem->IntAttribute("B")};
+			currentG.trans.push_back(t);
+		} else if (elemName == "models") {
+			for (tinyxml2::XMLElement *model = elem->FirstChildElement("model"); model != nullptr; model = model->NextSiblingElement("model")) {
+				std::ifstream myfile;
+				myfile.open(model->Attribute("file"));
+				addVertices(myfile, &currentG);
+				myfile.close();
+			}
+		} else if (elemName == "group") {
+			addGroup(elem, &currentG);
+		}
+	}
+
+	// Add the group being created to its parent's subGroups (or allGroups if none)
+	if (parent == nullptr)
+		allGroups.push_back(currentG);
+	else
+		parent->subGroups.push_back(currentG);
 }
 
+// Function that processes the XML file received as an argument
 void processXML(char **argv) {
 	// Load the XML file to memory
 	tinyxml2::XMLDocument doc;
@@ -255,16 +304,8 @@ void processXML(char **argv) {
 	}
 
 	// Go through all "model" structures
-	for (tinyxml2::XMLElement *model = scene->FirstChildElement("model"); model != nullptr; model = model->NextSiblingElement()) {
-		std::ifstream myfile;
-		myfile.open(model->Attribute("file"));
-		addVertices(myfile);
-		myfile.close();
-	}
-
-	// Process transformations
-	processGroup();
-
+	for (tinyxml2::XMLElement *group = scene->FirstChildElement("group"); group != nullptr; group = group->NextSiblingElement("group"))
+		addGroup(group, nullptr);
 }
 
 int main(int argc, char **argv) {

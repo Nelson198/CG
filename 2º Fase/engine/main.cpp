@@ -77,17 +77,51 @@ void addVertices(std::ifstream &vertices, Group *group) {
     }
 }
 
-// Function that draws the loaded vertices to the screen
-void drawVertices() {
-	glBegin(GL_TRIANGLES);
+// Function that handles the drawing of a given group
+void drawGroup(Group g) {
+	glPushMatrix();
 
-	for (Vertex v: allGroups.at(0).vert) {
+	for (Transformation t: g.trans) {
+		switch (t.type) {
+			case 'T':
+				glTranslatef(t.param1, t.param2, t.param3);
+				break;
+
+			case 'R':
+				glRotatef(t.param1, t.param2, t.param3, t.param4);
+				break;
+
+			case 'S':
+				glScalef(t.param1, t.param2, t.param3);
+				break;
+
+			case 'C':
+				// glColor3f(t.param1, t.param2, t.param3); // IGNORAR AS CORES POR AGORA, VISTO QUE NÃO SÃO PEDIDAS NO ENUNCIADO
+				break;
+
+			default:
+				break;
+		}
+	}
+
+	glBegin(GL_TRIANGLES);
+	for (Vertex v: g.vert) {
 		// Give a different color to every vertex, so that a gradient effect is applied
 		glColor3f(rand() / (float) RAND_MAX, rand() / (float) RAND_MAX, rand() / (float) RAND_MAX);
 		glVertex3f(v.x, v.y, v.z);
 	}
-
 	glEnd();
+
+	for (Group g: g.subGroups)
+		drawGroup(g);
+
+	glPopMatrix();
+}
+
+// Function that draws the loaded vertices to the screen
+void drawVertices() {
+	for (Group g: allGroups)
+		drawGroup(g);
 }
 
 // Function that draws the axis

@@ -24,10 +24,10 @@ typedef std::vector<Vertex> Vertices;
 
 typedef struct {
 	char type;  // It can be: T - Translate, R - Rotate, S - Scale, C - Color
-	int param1; // These parameters depend on the type
-	int param2;
-	int param3;
-	int param4;
+	float param1; // These parameters depend on the type
+	float param2;
+	float param3;
+	float param4;
 } Transformation;
 typedef std::vector<Transformation> Transformations;
 
@@ -40,7 +40,7 @@ typedef std::vector<Group> Groups;
 
 Groups allGroups;
 
-GLdouble dist = 10, beta = M_PI_4, alpha = M_PI_4, xd = 0, zd = 0;
+GLdouble dist = 50, beta = M_PI_4, alpha = M_PI_4, xd = 0, zd = 0;
 
 // Function that creates a vertex object from its string representation "x y z"
 Vertex extractVertice(std::string s) {
@@ -81,6 +81,7 @@ void addVertices(std::ifstream &vertices, Group *group) {
 void drawGroup(Group g) {
 	glPushMatrix();
 
+	bool changedColor = false;
 	for (Transformation t: g.trans) {
 		switch (t.type) {
 			case 'T':
@@ -96,7 +97,10 @@ void drawGroup(Group g) {
 				break;
 
 			case 'C':
-				// glColor3f(t.param1, t.param2, t.param3); // IGNORAR AS CORES POR AGORA, VISTO QUE NÃO SÃO PEDIDAS NO ENUNCIADO
+				if (t.param1 != 0 || t.param2 != 0 || t.param3 != 0) {
+					glColor3f(t.param1, t.param2, t.param3);
+					changedColor = true;
+				}
 				break;
 
 			default:
@@ -106,8 +110,10 @@ void drawGroup(Group g) {
 
 	glBegin(GL_TRIANGLES);
 	for (Vertex v: g.vert) {
-		// Give a different color to every vertex, so that a gradient effect is applied
-		glColor3f(rand() / (float) RAND_MAX, rand() / (float) RAND_MAX, rand() / (float) RAND_MAX);
+		if (!changedColor) {
+			// Give a different color to every vertex, so that a gradient effect is applied
+			glColor3f(rand() / (float) RAND_MAX, rand() / (float) RAND_MAX, rand() / (float) RAND_MAX);
+		}
 		glVertex3f(v.x, v.y, v.z);
 	}
 	glEnd();
@@ -251,6 +257,16 @@ void processSpecialKeys(int key, int xx, int yy) {
 			alpha += deltaToMove;
 			break;
 
+		// Move the camera closer to the origin
+		case GLUT_KEY_PAGE_DOWN:
+			dist += deltaToMove;
+			break;
+
+		// Move the camera further from the origin
+		case GLUT_KEY_PAGE_UP:
+			dist -= deltaToMove;
+			break;
+
 		default:
 			return;
 	}
@@ -290,23 +306,25 @@ void addGroup(tinyxml2::XMLElement *group, Group *parent) {
 	for (tinyxml2::XMLElement *elem = group->FirstChildElement(); elem != nullptr; elem = elem->NextSiblingElement()) {
 		std::string elemName = elem->Value();
 		if (elemName == "translate") {
-			Transformation t = {type: 'T', param1: elem->IntAttribute("X"), param2: elem->IntAttribute("Y"), param3: elem->IntAttribute("Z")};
+			Transformation t = {type: 'T', param1: elem->FloatAttribute("X"), param2: elem->FloatAttribute("Y"), param3: elem->FloatAttribute("Z")};
 			currentG.trans.push_back(t);
 		} else if (elemName == "rotate") {
-			Transformation t = {type: 'R', param1: elem->IntAttribute("angle"), param2: elem->IntAttribute("axisX"), param3: elem->IntAttribute("axisY"), param4: elem->IntAttribute("axisZ")};
+			Transformation t = {type: 'R', param1: elem->FloatAttribute("angle"), param2: elem->FloatAttribute("axisX"), param3: elem->FloatAttribute("axisY"), param4: elem->FloatAttribute("axisZ")};
 			currentG.trans.push_back(t);			
 		} else if (elemName == "scale") {
-			Transformation t = {type: 'S', param1: elem->IntAttribute("X"), param2: elem->IntAttribute("Y"), param3: elem->IntAttribute("Z")};
-			currentG.trans.push_back(t);
-		} else if (elemName == "color") {
-			Transformation t = {type: 'C', param1: elem->IntAttribute("R"), param2: elem->IntAttribute("G"), param3: elem->IntAttribute("B")};
+			Transformation t = {type: 'S', param1: elem->FloatAttribute("X"), param2: elem->FloatAttribute("Y"), param3: elem->FloatAttribute("Z")};
 			currentG.trans.push_back(t);
 		} else if (elemName == "models") {
 			for (tinyxml2::XMLElement *model = elem->FirstChildElement("model"); model != nullptr; model = model->NextSiblingElement("model")) {
+				// Extract the vertices
 				std::ifstream myfile;
 				myfile.open(model->Attribute("file"));
 				addVertices(myfile, &currentG);
 				myfile.close();
+
+				// Extract the color of the vetices
+				Transformation t = {type: 'C', param1: model->FloatAttribute("R"), param2: model->FloatAttribute("G"), param3: model->FloatAttribute("B")};
+				currentG.trans.push_back(t);
 			}
 		} else if (elemName == "group") {
 			addGroup(elem, &currentG);

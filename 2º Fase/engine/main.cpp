@@ -46,6 +46,7 @@ GLdouble dist = 50, beta = M_PI_4, alpha = M_PI_4, xd = 0, zd = 0;
 void drawGroup(Group g) {
 	glPushMatrix();
 
+	float R, G, B;
 	bool changedColor = false;
 	for (Transformation t: g.trans) {
 		switch (t.type) {
@@ -63,7 +64,9 @@ void drawGroup(Group g) {
 
 			case 'C':
 				if (t.param1 != 0 || t.param2 != 0 || t.param3 != 0) {
-					glColor3f(t.param1, t.param2, t.param3);
+					R = t.param1;
+					G = t.param2;
+					B = t.param3;
 					changedColor = true;
 				}
 				break;
@@ -78,6 +81,9 @@ void drawGroup(Group g) {
 		if (!changedColor) {
 			// Give a different color to every vertex, so that a gradient effect is applied
 			glColor3f(rand() / (float) RAND_MAX, rand() / (float) RAND_MAX, rand() / (float) RAND_MAX);
+		} else {
+			float variation = (rand() / (float) RAND_MAX) / 5;
+			glColor3f(R + variation, G + variation, B + variation);
 		}
 		glVertex3f(v.x, v.y, v.z);
 	}

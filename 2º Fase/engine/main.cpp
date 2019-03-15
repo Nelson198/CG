@@ -36,9 +36,8 @@ typedef struct group {
 	Vertices vert;
 	std::vector<struct group> subGroups;
 } Group;
-typedef std::vector<Group> Groups;
 
-Groups allGroups;
+Group mainGroup;
 
 GLdouble dist = 50, beta = M_PI_4, alpha = M_PI_4, xd = 0, zd = 0;
 
@@ -95,12 +94,6 @@ void drawGroup(Group g) {
 	glPopMatrix();
 }
 
-// Function that draws the loaded vertices to the screen
-void drawVertices() {
-	for (Group g: allGroups)
-		drawGroup(g);
-}
-
 // Function that draws the axis
 void drawAxis() {
 	glBegin(GL_LINES);
@@ -136,8 +129,8 @@ void renderScene() {
 	// Draw the axis
 	// drawAxis();
 
-	// Draw the vertices that were loaded from the ".3d" files
-	drawVertices();
+	// Draw the scene that was loaded from the XML file
+	drawGroup(mainGroup);
 
 	// End of frame
 	glutSwapBuffers();
@@ -295,8 +288,8 @@ void addVertices(std::ifstream &vertices, Group *group) {
         group->vert.push_back(extractVertice(v));
 }
 
-// Function that adds a group's information to its parent's subGroups (or allGroups if none)
-void addGroup(tinyxml2::XMLElement *group, Group *parent) {
+// Function that processes a group's information and returns an object with that info
+Group processGroup(tinyxml2::XMLElement *group) {
 	Group currentG;
 	// Add all the attributes inside the current group to its "group" object
 	for (tinyxml2::XMLElement *elem = group->FirstChildElement(); elem != nullptr; elem = elem->NextSiblingElement()) {
@@ -324,15 +317,12 @@ void addGroup(tinyxml2::XMLElement *group, Group *parent) {
 				currentG.trans.push_back(t);
 			}
 		} else if (elemName == "group") {
-			addGroup(elem, &currentG);
+			Group child = processGroup(elem);
+			currentG.subGroups.push_back(child);
 		}
 	}
 
-	// Add the group being created to its parent's subGroups (or allGroups if none)
-	if (parent == nullptr)
-		allGroups.push_back(currentG);
-	else
-		parent->subGroups.push_back(currentG);
+	return currentG;
 }
 
 // Function that processes the XML file received as an argument
@@ -352,9 +342,8 @@ void processXML(char **argv) {
 		exit(EXIT_FAILURE);
 	}
 
-	// Iterate through all "group" structures and add them to allGroups
-	for (tinyxml2::XMLElement *group = scene->FirstChildElement("group"); group != nullptr; group = group->NextSiblingElement("group"))
-		addGroup(group, nullptr);
+	// Process the scene element and all its children
+	mainGroup = processGroup(scene);
 }
 
 int main(int argc, char **argv) {

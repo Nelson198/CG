@@ -1,4 +1,5 @@
 <scene>
+	<rotate angle="260" axisY="1"/>
 	<group>
 		<scale X="2" Y="2" Z="2"/>
 		<models>
@@ -73,7 +74,7 @@
 		<scale X="0.6" Y="0.6" Z="0.6"/>
 		<models>
 			<!-- URANUS -->
-			<model file="../planet.3d" R="0.86" G="0.95" B="0.96"/>
+			<model file="../planet.3d" R="0.66" G="0.75" B="0.96"/>
 		</models>
 	</group>
 	<group>

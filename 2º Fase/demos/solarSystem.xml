@@ -1,0 +1,89 @@
+<scene>
+	<rotate angle="260" axisY="1"/>
+	<group>
+		<scale X="2" Y="2" Z="2"/>
+		<models>
+			<!-- SUN -->
+			<model file="../../demos/planet.3d" R="0.96" G="0.45" B="0.05"/>
+		</models>
+	</group>
+	<group>
+		<translate Z="-5"/>
+		<scale X="0.1" Y="0.1" Z="0.1"/>
+		<models>
+			<!-- MERCURY -->
+			<model file="../../demos/planet.3d" R="0.98" G="0.97" B="0.95"/>
+		</models>
+	</group>
+	<group>
+		<rotate angle="50" axisY="1"/>
+		<translate Z="-10"/>
+		<scale X="0.3" Y="0.3" Z="0.3"/>
+		<models>
+			<!-- VENUS -->
+			<model file="../../demos/planet.3d" R="1" G="1" B="0.95"/>
+		</models>
+	</group>
+	<group>
+		<rotate angle="-90" axisY="1"/>
+		<translate Z="-15"/>
+		<scale X="0.3" Y="0.3" Z="0.3"/>
+		<models>
+			<!-- EARTH -->
+			<model file="../../demos/planet.3d" R="0.04" G="0.36" B="0.89"/>
+		</models>
+		<group>
+			<rotate angle="-35" axisX="1"/>
+			<translate Z="2.7"/>
+			<scale X="0.15" Y="0.15" Z="0.15"/>
+			<models>
+				<!-- MOON -->
+				<model file="../../demos/planet.3d" R="0.96" G="0.95" B="0.79"/>
+			</models>
+		</group>
+	</group>
+	<group>
+		<rotate angle="50" axisY="1"/>
+		<translate Z="-18"/>
+		<scale X="0.3" Y="0.3" Z="0.3"/>
+		<models>
+			<!-- MARS -->
+			<model file="../../demos/planet.3d" R="0.94" G="0.28" B="0.11"/>
+		</models>
+	</group>
+	<group>
+		<rotate angle="-170" axisY="1"/>
+		<translate Z="-28"/>
+		<models>
+			<!-- JUPITER -->
+			<model file="../../demos/planet.3d" R="0.99" G="0.79" B="0.57"/>
+		</models>
+	</group>
+	<group>
+		<rotate angle="-190" axisY="1"/>
+		<translate Z="-33"/>
+		<scale X="0.8" Y="0.8" Z="0.8"/>
+		<models>
+			<!-- SATURN -->
+			<model file="../../demos/planet.3d" R="0.89" G="0.77" B="0.13"/>
+		</models>
+	</group>
+	<group>
+		<rotate angle="-210" axisY="1"/>
+		<translate Z="-38"/>
+		<scale X="0.6" Y="0.6" Z="0.6"/>
+		<models>
+			<!-- URANUS -->
+			<model file="../../demos/planet.3d" R="0.66" G="0.75" B="0.96"/>
+		</models>
+	</group>
+	<group>
+		<rotate angle="-230" axisY="1"/>
+		<translate Z="-43"/>
+		<scale X="0.6" Y="0.6" Z="0.6"/>
+		<models>
+			<!-- NEPTUN -->
+			<model file="../../demos/planet.3d" R="0.22" G="0.71" B="0.97"/>
+		</models>
+	</group>
+</scene>

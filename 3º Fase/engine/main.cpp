@@ -15,27 +15,25 @@
 
 #include "tinyxml2.h"
 
-typedef struct {
+struct Vertex {
 	float x;
 	float y;
 	float z;
-} Vertex;
-typedef std::vector<Vertex> Vertices;
+};
 
-typedef struct {
-	char type;  // It can be: T - Translate, R - Rotate, S - Scale, C - Color
+struct Transformation {
+	char type;    // It can be: T - Translate, R - Rotate, S - Scale, C - Color
 	float param1; // These parameters depend on the type
 	float param2;
 	float param3;
 	float param4;
-} Transformation;
-typedef std::vector<Transformation> Transformations;
+};
 
-typedef struct group {
-	Transformations trans;
-	Vertices vert;
-	std::vector<struct group> subGroups;
-} Group;
+struct Group {
+	std::vector<Transformation> trans;
+	std::vector<Vertex> vert;
+	std::vector<Group> subGroups;
+};
 
 Group mainGroup;
 

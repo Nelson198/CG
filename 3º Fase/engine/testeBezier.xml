@@ -1,0 +1,7 @@
+<scene>
+    <group>
+        <models>
+            <model file="../../teapot.3d" R="0.5" G="0.5" B="0.1"/>
+        </models>
+    </group>
+</scene>

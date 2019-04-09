@@ -1,6 +1,8 @@
 #include <stdlib.h>
+#include <string.h>
 #include <iostream>
 #include <fstream>
+#include <vector>
 
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -199,10 +201,115 @@ void printCone(int bottomRadius, int height, int slices, int stacks) {
 	}
 }
 
+void printBezier(char *filePatch, int tesselation) {
+	// Open a file with the same name (but ending in ".3d")
+	// to output the triangles to
+	std::ifstream patchFile;
+	patchFile.open(filePatch);
+	char *fileOut = (char *) malloc(strlen(filePatch)-2);
+	strncpy(fileOut, filePatch, strlen(filePatch)-5);
+	strcat(fileOut, "3d");
+	outFile.open(fileOut);
+
+	char *line = (char *) malloc(1000);
+
+	// Get the patches
+	patchFile.getline(line, 1000);
+	int numPatches = atoi(line);
+	std::vector<std::vector<int>> patches;
+	patches.reserve(numPatches);
+	for (int i = 0; i < numPatches; i++) {
+		patchFile.getline(line, 1000);
+
+		std::vector<int> toAdd = std::vector<int>();
+		std::string commaSepPatches(line);
+		std::string delimiter = ", ";
+		int pos = 0;
+		std::string token;
+		while ((pos = commaSepPatches.find(delimiter)) != std::string::npos) {
+			token = commaSepPatches.substr(0, pos);
+			toAdd.push_back(std::stoi(token));
+			commaSepPatches.erase(0, pos + delimiter.length());
+		}
+		toAdd.push_back(std::stoi(commaSepPatches));
+
+		patches.push_back(toAdd);
+	}
+
+	// Get the control points
+	patchFile.getline(line, 1000);
+	int numControlPoints = atoi(line);
+	struct CP {
+		float x;
+		float y;
+		float z;
+	};
+	std::vector<CP> controlPoints;
+	controlPoints.reserve(numControlPoints);
+	for (int i = 0; i < numControlPoints; i++) {
+		patchFile.getline(line, 1000);
+
+		std::string delimiter = ", ";
+		float x, y, z;
+		int pos;
+		std::string commaSepCPs(line);
+		std::string token;
+
+		// Process the x coordinate
+		pos = commaSepCPs.find(delimiter);
+		token = commaSepCPs.substr(0, pos);
+		x = atof(token.c_str());
+		commaSepCPs.erase(0, pos + delimiter.length());
+
+		// Process the y coordinate
+		pos = commaSepCPs.find(delimiter);
+		token = commaSepCPs.substr(0, pos);
+		y = atof(token.c_str());
+		commaSepCPs.erase(0, pos + delimiter.length());
+
+		// Process the z coordinate
+		pos = commaSepCPs.find(delimiter);
+		token = commaSepCPs.substr(0, pos);
+		z = atof(token.c_str());
+
+		controlPoints.push_back(CP{x, y, z});
+	}
+
+	///// FALTA USAR A TESSELATION PARA A IMAGEM FICAR MELHOR /////
+	for (auto patch : patches) {
+		for (int i = 0; i < patch.size()-2; i++) {
+			CP aux = controlPoints.at(patch.at(i));
+			printVertex(aux.x, aux.y, aux.z);
+
+			aux = controlPoints.at(patch.at(i+1));
+			printVertex(aux.x, aux.y, aux.z);
+
+			aux = controlPoints.at(patch.at(i+2));
+			printVertex(aux.x, aux.y, aux.z);
+		}
+	}
+
+	patchFile.close();
+	outFile.close();
+}
+
 int main(int argc, char **argv) {
 	if (argc < 4) {
 		std::cout << "Indique a forma geométrica que pretende gerar e o ficheiro de destino\n";
 		exit(EXIT_FAILURE);
+	}
+
+	if (std::string(argv[1]) == "bezier") {
+		if (argc != 4) {
+			std::cout << "Número de argumentos para a patch de Bezier incorreto\n";
+			exit(EXIT_FAILURE);
+		}
+
+		char *filePatch = (char*) malloc(strlen(argv[2])+1);
+		strcpy(filePatch, argv[2]);
+		int tesselation = atoi(argv[3]);
+		printBezier(filePatch, tesselation);
+		return 0;
 	}
 
   	outFile.open(argv[argc-1]);

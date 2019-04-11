@@ -12,6 +12,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <unordered_map>
 
 #include "tinyxml2.h"
 
@@ -19,10 +20,30 @@ struct Vertex {
 	float x;
 	float y;
 	float z;
+
+	bool operator==(const Vertex &other) const {
+		return (x == other.x && y == other.y && z == other.z);
+  }
+};
+
+struct VertexHasher {
+	std::size_t operator()(const Vertex& k) const {
+		using std::size_t;
+		using std::hash;
+		using std::string;
+
+		return ((hash<float>()(k.x) ^ (hash<float>()(k.y) << 1)) >> 1) ^ (hash<float>()(k.z) << 1);
+	}
+};
+
+struct Color {
+	float R;
+	float G;
+	float B;
 };
 
 struct Transformation {
-	char type;    // It can be: T - Translate, R - Rotate, S - Scale, C - Color
+	char type;    // It can be: T - Translate, R - Rotate, S - Scale
 	float param1; // These parameters depend on the type
 	float param2;
 	float param3;
@@ -32,6 +53,7 @@ struct Transformation {
 struct Group {
 	std::vector<Transformation> trans;
 	std::vector<Vertex> vert;
+	std::unordered_map<Vertex,Color,VertexHasher> vertColors;
 	std::vector<Group> subGroups;
 };
 
@@ -43,8 +65,6 @@ GLdouble dist = 50, beta = M_PI_4, alpha = M_PI_4, xd = 0, zd = 0;
 void drawGroup(Group g) {
 	glPushMatrix();
 
-	float R, G, B;
-	bool changedColor = false;
 	for (Transformation t: g.trans) {
 		switch (t.type) {
 			case 'T':
@@ -59,15 +79,6 @@ void drawGroup(Group g) {
 				glScalef(t.param1, t.param2, t.param3);
 				break;
 
-			case 'C':
-				if (t.param1 != 0 || t.param2 != 0 || t.param3 != 0) {
-					R = t.param1;
-					G = t.param2;
-					B = t.param3;
-					changedColor = true;
-				}
-				break;
-
 			default:
 				break;
 		}
@@ -75,13 +86,8 @@ void drawGroup(Group g) {
 
 	glBegin(GL_TRIANGLES);
 	for (Vertex v: g.vert) {
-		if (!changedColor) {
-			// Give a different color to every vertex, so that a gradient effect is applied
-			glColor3f(rand() / (float) RAND_MAX, rand() / (float) RAND_MAX, rand() / (float) RAND_MAX);
-		} else {
-			float variation = (rand() / (float) RAND_MAX) / 5;
-			glColor3f(R + variation, G + variation, B + variation);
-		}
+		Color c = g.vertColors.at(v);
+		glColor3f(c.R, c.G, c.B);
 		glVertex3f(v.x, v.y, v.z);
 	}
 	glEnd();
@@ -310,9 +316,23 @@ Group processGroup(tinyxml2::XMLElement *group) {
 				addVertices(myfile, &currentG);
 				myfile.close();
 
-				// Extract the color of the vetices
-				Transformation t = {type: 'C', param1: model->FloatAttribute("R"), param2: model->FloatAttribute("G"), param3: model->FloatAttribute("B")};
-				currentG.trans.push_back(t);
+				// Extract the color of the vertices
+				Color c = {model->FloatAttribute("R"), model->FloatAttribute("G"), model->FloatAttribute("B")};
+
+				// Attribute a color to each of the vertices
+				if (c.R != 0 || c.G != 0 || c.B != 0) {
+					for (auto vertex : currentG.vert) {
+						float variation = (rand() / (float) RAND_MAX) / 5;
+						Color toAdd = {c.R + variation, c.G + variation, c.B + variation};
+						currentG.vertColors.insert(std::pair<Vertex,Color>(vertex, toAdd));
+					}
+				} else {
+					// Give a different color to every vertex, so that a gradient effect is applied
+					for (auto vertex : currentG.vert) {
+						Color toAdd = {rand() / (float) RAND_MAX, rand() / (float) RAND_MAX, rand() / (float) RAND_MAX};
+						currentG.vertColors.insert(std::pair<Vertex,Color>(vertex, toAdd));
+					}
+				}
 			}
 		} else if (elemName == "group") {
 			Group child = processGroup(elem);
@@ -362,6 +382,7 @@ int main(int argc, char **argv) {
 
 	// Register the required callback 
 	glutDisplayFunc(renderScene);
+	glutIdleFunc(renderScene);
 	glutReshapeFunc(resizeWindow);
 
 	// Resgister callback for keyboard processing

@@ -43,7 +43,7 @@ struct Color {
 };
 
 struct Transformation {
-	char type;    // It can be: T - Translate, R - Rotate, S - Scale
+	char type;    // It can be: T - Translate, [AI] - Rotate (Angle/Time), S - Scale
 	float param1; // These parameters depend on the type
 	float param2;
 	float param3;
@@ -65,14 +65,25 @@ GLdouble dist = 50, beta = M_PI_4, alpha = M_PI_4, xd = 0, zd = 0;
 void drawGroup(Group g) {
 	glPushMatrix();
 
+	bool timeRotated = false;
+	float timeRotationParams[4];
 	for (Transformation t: g.trans) {
 		switch (t.type) {
 			case 'T':
 				glTranslatef(t.param1, t.param2, t.param3);
 				break;
 
-			case 'R':
+			case 'A': // Rotate Angle
 				glRotatef(t.param1, t.param2, t.param3, t.param4);
+				break;
+
+			case 'I': // Rotate Time
+				timeRotated = true;
+				timeRotationParams[0] = fmod(float(glutGet(GLUT_ELAPSED_TIME))/1000, t.param1)*360/t.param1;
+				timeRotationParams[1] = t.param2;
+				timeRotationParams[2] = t.param3;
+				timeRotationParams[3] = t.param4;
+				glRotatef(timeRotationParams[0], timeRotationParams[1], timeRotationParams[2], timeRotationParams[3]);
 				break;
 
 			case 'S':
@@ -91,6 +102,9 @@ void drawGroup(Group g) {
 		glVertex3f(v.x, v.y, v.z);
 	}
 	glEnd();
+
+	if (timeRotated)
+		glRotatef(-timeRotationParams[0], timeRotationParams[1], timeRotationParams[2], timeRotationParams[3]);
 
 	for (Group g: g.subGroups)
 		drawGroup(g);
@@ -302,8 +316,13 @@ Group processGroup(tinyxml2::XMLElement *group) {
 			Transformation t = {type: 'T', param1: elem->FloatAttribute("X"), param2: elem->FloatAttribute("Y"), param3: elem->FloatAttribute("Z")};
 			currentG.trans.push_back(t);
 		} else if (elemName == "rotate") {
-			Transformation t = {type: 'R', param1: elem->FloatAttribute("angle"), param2: elem->FloatAttribute("axisX"), param3: elem->FloatAttribute("axisY"), param4: elem->FloatAttribute("axisZ")};
-			currentG.trans.push_back(t);			
+			if (elem->FloatAttribute("angle") != 0) {
+				Transformation t = {type: 'A', param1: elem->FloatAttribute("angle"), param2: elem->FloatAttribute("axisX"), param3: elem->FloatAttribute("axisY"), param4: elem->FloatAttribute("axisZ")};
+				currentG.trans.push_back(t);			
+			} else {
+				Transformation t = {type: 'I', param1: elem->FloatAttribute("time"), param2: elem->FloatAttribute("axisX"), param3: elem->FloatAttribute("axisY"), param4: elem->FloatAttribute("axisZ")};
+				currentG.trans.push_back(t);
+			}
 		} else if (elemName == "scale") {
 			Transformation t = {type: 'S', param1: elem->FloatAttribute("X"), param2: elem->FloatAttribute("Y"), param3: elem->FloatAttribute("Z")};
 			currentG.trans.push_back(t);
@@ -378,7 +397,7 @@ int main(int argc, char **argv) {
 	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
 	glutInitWindowPosition(100, 100);
 	glutInitWindowSize(800, 800);
-	glutCreateWindow("Fase2TP - Engine");
+	glutCreateWindow("Fase3TP - Engine");
 
 	// Register the required callback 
 	glutDisplayFunc(renderScene);

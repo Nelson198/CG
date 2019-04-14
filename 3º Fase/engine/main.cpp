@@ -43,7 +43,7 @@ struct Color {
 };
 
 struct Transformation {
-	char type;    // It can be: T - Translate, [AI] - Rotate (Angle/Time), S - Scale
+	char type;    // It can be: [TM] - Translate (Normal/Time), [AI] - Rotate (Angle/Time), S - Scale
 	float param1; // These parameters depend on the type
 	float param2;
 	float param3;
@@ -65,12 +65,17 @@ GLdouble dist = 50, beta = M_PI_4, alpha = M_PI_4, xd = 0, zd = 0;
 void drawGroup(Group g) {
 	glPushMatrix();
 
-	bool timeRotated = false;
+	bool timeRotated = false, timeTranslated = false;
 	float timeRotationParams[4];
 	for (Transformation t: g.trans) {
 		switch (t.type) {
-			case 'T':
+			case 'T': // Translation
 				glTranslatef(t.param1, t.param2, t.param3);
+				break;
+
+			case 'M': // Translation Time
+				timeTranslated = true;
+				/* ACABAR */
 				break;
 
 			case 'A': // Rotate Angle
@@ -313,8 +318,13 @@ Group processGroup(tinyxml2::XMLElement *group) {
 	for (tinyxml2::XMLElement *elem = group->FirstChildElement(); elem != nullptr; elem = elem->NextSiblingElement()) {
 		std::string elemName = elem->Value();
 		if (elemName == "translate") {
-			Transformation t = {type: 'T', param1: elem->FloatAttribute("X"), param2: elem->FloatAttribute("Y"), param3: elem->FloatAttribute("Z")};
-			currentG.trans.push_back(t);
+			if (elem->FloatAttribute("time") >= 0) {
+				Transformation t = {type: 'M', param1: elem->FloatAttribute("time")};
+				currentG.trans.push_back(t);
+			} else {
+				Transformation t = {type: 'T', param1: elem->FloatAttribute("X"), param2: elem->FloatAttribute("Y"), param3: elem->FloatAttribute("Z")};
+				currentG.trans.push_back(t);
+			}
 		} else if (elemName == "rotate") {
 			if (elem->FloatAttribute("angle") != 0) {
 				Transformation t = {type: 'A', param1: elem->FloatAttribute("angle"), param2: elem->FloatAttribute("axisX"), param3: elem->FloatAttribute("axisY"), param4: elem->FloatAttribute("axisZ")};

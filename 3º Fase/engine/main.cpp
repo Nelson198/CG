@@ -50,6 +50,7 @@ struct Transformation {
 	float param2;
 	float param3;
 	float param4;
+	std::vector<Vertex> catmull;
 };
 
 struct Group {
@@ -68,6 +69,15 @@ GLuint buffers[2];
 std::vector<GLfloat> positions, colors;
 int numVertices = 0;
 
+// Function that normalizes a vector
+void normalize(float* a) {
+	float l = sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2]);
+
+	a[0] = a[0] / l;
+	a[1] = a[1] / l;
+	a[2] = a[2] / l;
+}
+
 // Function that returns the point resulting from multiplying a 4D matrix by a point
 Vertex multMatrixPoint(float mat[4][4], Vertex v) {
 	float x = mat[0][0]*v.x + mat[0][1]*v.y + mat[0][2]*v.z + mat[0][3];
@@ -77,12 +87,87 @@ Vertex multMatrixPoint(float mat[4][4], Vertex v) {
 	return Vertex{x, y, z};
 }
 
+// Function that multiplies a matrix by a vector
+void multMatrixVector(float *m, float *v, float *res) {
+
+    for (int j = 0; j < 4; ++j) {
+        res[j] = 0;
+        for (int k = 0; k < 4; ++k) {
+            res[j] += v[k] * m[j * 4 + k];
+        }
+    }
+}
+
+// Function that returns the point in the curve given a time
+Vertex getCatmullRomPoint(float t, Vertex v0, Vertex v1, Vertex v2, Vertex v3, Vertex *deriv) {
+    float T[4] = {powf(t,3), powf(t,2), t, 1};
+    float T1[4] = {3*powf(t,2), 2*t, 1, 0};
+	Vertex pos;
+
+    // Catmull-Rom matrix
+    float m[4][4] = {   {-0.5f,  1.5f, -1.5f,  0.5f},
+                        { 1.0f, -2.5f,  2.0f, -0.5f},
+                        {-0.5f,  0.0f,  0.5f,  0.0f},
+                        { 0.0f,  1.0f,  0.0f,  0.0f}};
+            
+    float p1[4] = {v0.x, v1.x, v2.x, v3.x};
+    float a1[4];
+    multMatrixVector((float*)m, p1, a1);
+    pos.x = T[0]*a1[0] + T[1]*a1[1] + T[2]*a1[2] + T[3]*a1[3];
+	deriv->x = T1[0]*a1[0] + T1[1]*a1[1] + T1[2]*a1[2] + T1[3]*a1[3];
+
+    float p2[4] = {v0.y, v1.y, v2.y, v3.y};
+    float a2[4];
+    multMatrixVector((float*)m, p2, a2);
+    pos.y = T[0]*a2[0] + T[1]*a2[1] + T[2]*a2[2] + T[3]*a2[3];
+	deriv->y = T1[0]*a2[0] + T1[1]*a2[1] + T1[2]*a2[2] + T1[3]*a2[3];
+    
+    float p3[4] = {v0.z, v1.z, v2.z, v3.z};
+    float a3[4];
+    multMatrixVector((float*)m, p3, a3);
+    pos.z = T[0]*a3[0] + T[1]*a3[1] + T[2]*a3[2] + T[3]*a3[3];
+	deriv->z = T1[0]*a3[0] + T1[1]*a3[1] + T1[2]*a3[2] + T1[3]*a3[3];
+
+	return pos;
+}
+
+// Function that returns the point in the curve given a time
+Vertex getGlobalCatmullRomPoint(std::vector<Vertex> pontos, float elapsedTime, Vertex *deriv) {
+    int POINT_COUNT = pontos.size();
+    float t = elapsedTime * POINT_COUNT; // this is the real global t
+    int index = floor(t);  // which segment
+    t = t - index; // where within  the segment
+
+    // indices store the points
+    int indices[4]; 
+    indices[0] = (index + POINT_COUNT-1)%POINT_COUNT;   
+    indices[1] = (indices[0]+1)%POINT_COUNT;
+    indices[2] = (indices[1]+1)%POINT_COUNT; 
+    indices[3] = (indices[2]+1)%POINT_COUNT;
+
+    return getCatmullRomPoint(t, pontos[indices[0]], pontos[indices[1]], pontos[indices[2]], pontos[indices[3]], deriv);
+}
+
+// Function that builds the rotation matrix from a Catmull-Rom's matrix
+void buildRotMatrix(float *x, float *y, float *z, float *m) {
+	m[0] = x[0]; m[1] = x[1]; m[2] = x[2]; m[3] = 0;
+	m[4] = y[0]; m[5] = y[1]; m[6] = y[2]; m[7] = 0;
+	m[8] = z[0]; m[9] = z[1]; m[10] = z[2]; m[11] = 0;
+	m[12] = 0; m[13] = 0; m[14] = 0; m[15] = 1;
+}
+
+// Function that calculates the cross product betqween two vectors
+void cross(float *a, float *b, float *res) {
+	res[0] = a[1]*b[2] - a[2]*b[1];
+	res[1] = a[2]*b[0] - a[0]*b[2];
+	res[2] = a[0]*b[1] - a[1]*b[0];
+}
+
 // Function that updates the data of a given group
 void updateGroup(Group g) {
 	glPushMatrix();
 
 	int numRotations = 0;
-	bool timeTranslated = false;
 	float timeRotationParams[4];
 	for (Transformation t: g.trans) {
 		switch (t.type) {
@@ -91,9 +176,25 @@ void updateGroup(Group g) {
 				break;
 
 			case 'M': // Translation Time
-				timeTranslated = true;
-				/* ACABAR */
+			{
+				Vertex deriv;
+				Vertex p = getGlobalCatmullRomPoint(t.catmull, float(float(glutGet(GLUT_ELAPSED_TIME))/1000/t.param1), &deriv);
+				glTranslatef(p.x, p.y, p.z);
+
+				float z[3];
+				float y[3] = {0,0,1};
+				float d[3] = {deriv.x, deriv.y, deriv.z};
+				float m[4][4];
+				cross(d,y,z);
+				normalize(z);
+				cross(z, d, y);
+				normalize(y);
+				normalize(d);
+				buildRotMatrix(d,y,z,(float *)m);
+				glMultMatrixf((float *)m);
+
 				break;
+			}
 
 			case 'A': // Rotate Angle
 				glRotatef(t.param1, t.param2, t.param3, t.param4);
@@ -131,8 +232,9 @@ void updateGroup(Group g) {
 		colors.push_back(c.R);
 		colors.push_back(c.G);
 		colors.push_back(c.B);
-		//glColor3f(c.R, c.G, c.B);
-		//glVertex3f(v.x, v.y, v.z);
+
+		glColor3f(c.R, c.G, c.B);
+		glVertex3f(v.x, v.y, v.z);
 	}
 	glEnd();
 
@@ -184,17 +286,23 @@ void renderScene() {
 	positions.clear();
 	colors.clear();
 	updateGroup(mainGroup);
-
+	
 	// VBO's
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffers[0]);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLfloat) * positions.size(), positions.data(), GL_DYNAMIC_DRAW);
+	glGenBuffers(2, buffers);
+	// - Position
+	glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * positions.size(), positions.data(), GL_STATIC_DRAW);
+	// - Colors
+	glBindBuffer(GL_ARRAY_BUFFER, buffers[1]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * colors.size(), colors.data(), GL_DYNAMIC_DRAW);
+
+	glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
 	glVertexPointer(3, GL_FLOAT, 0, positions.data());
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffers[1]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * colors.size(), colors.data(), GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, buffers[1]);
 	glColorPointer(3, GL_FLOAT, 0, colors.data());
 
-	glDrawArrays(GL_TRIANGLES, 0, positions.size());
+	glDrawArrays(GL_TRIANGLES, 0, positions.size()/3);
 
 	// End of frame
 	glutSwapBuffers();
@@ -361,6 +469,9 @@ Group processGroup(tinyxml2::XMLElement *group) {
 		if (elemName == "translate") {
 			if (elem->FloatAttribute("time") != 0) {
 				Transformation t = {type: 'M', param1: elem->FloatAttribute("time")};
+				for (tinyxml2::XMLElement *point = elem->FirstChildElement("point"); point != nullptr; point = point->NextSiblingElement("point")) {
+					t.catmull.push_back(Vertex{point->FloatAttribute("X"), point->FloatAttribute("Y"), point->FloatAttribute("Z")});
+				}
 				currentG.trans.push_back(t);
 			} else {
 				Transformation t = {type: 'T', param1: elem->FloatAttribute("X"), param2: elem->FloatAttribute("Y"), param3: elem->FloatAttribute("Z")};

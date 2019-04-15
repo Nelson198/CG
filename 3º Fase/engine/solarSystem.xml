@@ -1,14 +1,35 @@
 <scene>
 	<group>
-			<!-- SUN -->
+		<!-- SUN -->
 		<rotate time="27" axisY="1"/>
 		<scale X="2" Y="2" Z="2"/>
 		<models>
 			<model file="../planet.3d" R="0.96" G="0.45" B="0.05"/>
 		</models>
 	</group>
+
 	<group>
-			<!-- MERCURY -->
+		<translate time="10">
+			<point X="-10" Y="0" Z="0" />
+
+			<point X="-8" Y="9" Z="0" />
+			<point X="0" Y="11" Z="0" />
+			<point X="8" Y="9" Z="0" />
+
+			<point X="10" Y="0" Z="0" />
+
+			<point X="8" Y="-9" Z="0" />
+			<point X="0" Y="-11" Z="0" />
+			<point X="-9" Y="-9" Z="0" />
+		</translate>
+		<scale X="1" Y="1" Z="1"/>
+		<models>
+			<model file="../../teapot.3d" R="0.96" G="0.69" B="0.69" />
+		</models>
+	</group>
+
+	<group>
+		<!-- MERCURY -->
 		<rotate time="88" axisY="1"/>
 		<translate Z="-5"/>
 		<rotate time="58" axisY="1"/>
@@ -18,7 +39,7 @@
 		</models>
 	</group>
 	<group>
-			<!-- VENUS -->
+		<!-- VENUS -->
 		<rotate time="225" axisY="1"/>
 		<translate Z="-10"/>
 		<rotate time="116" axisX="-1"/>
@@ -28,7 +49,7 @@
 		</models>
 	</group>
 	<group>
-			<!-- EARTH -->
+		<!-- EARTH -->
 		<rotate time="365" axisY="1"/>
 		<translate Z="-15"/>
 		<rotate time="1" axisY="1"/>
@@ -37,7 +58,7 @@
 			<model file="../planet.3d" R="0.04" G="0.36" B="0.89"/>
 		</models>
 		<group>
-				<!-- MOON -->
+			<!-- MOON -->
 			<rotate time="27" axisY="1"/>
 			<translate Z="2.7"/>
 			<rotate time="27" axisY="1"/>
@@ -48,7 +69,7 @@
 		</group>
 	</group>
 	<group>
-			<!-- MARS -->
+		<!-- MARS -->
 		<rotate time="687" axisY="1"/>
 		<translate Z="-18"/>
 		<rotate time="1" axisY="1"/>
@@ -58,7 +79,7 @@
 		</models>
 	</group>
 	<group>
-			<!-- JUPITER -->
+		<!-- JUPITER -->
 		<rotate time="4332" axisY="1"/>
 		<translate Z="-28"/>
 		<rotate time="0.4" axisY="1"/>
@@ -67,7 +88,7 @@
 		</models>
 	</group>
 	<group>
-			<!-- SATURN -->
+		<!-- SATURN -->
 		<rotate time="10755" axisY="1"/>
 		<translate Z="-33"/>
 		<rotate time="0.42" axisY="1"/>
@@ -77,7 +98,7 @@
 		</models>
 	</group>
 	<group>
-			<!-- URANUS -->
+		<!-- URANUS -->
 		<rotate time="30687" axisY="1"/>
 		<translate Z="-38"/>
 		<rotate time="0.70" axisY="1"/>
@@ -87,7 +108,7 @@
 		</models>
 	</group>
 	<group>
-			<!-- NEPTUN -->
+		<!-- NEPTUN -->
 		<rotate time="60190" axisY="1"/>
 		<translate Z="-43"/>
 		<rotate time="0.67" axisY="1"/>

@@ -210,64 +210,104 @@ struct CP {
 	float z;
 };
 
-/* Compute the position of a point along a Bezier curve at t [0:1] */
-float bezierCurve(float P[3], float t) 
-{ 
-    float b0 = (1 - t) * (1 - t) * (1 - t); 
-    float b1 = 3 * t * (1 - t) * (1 - t); 
-    float b2 = 3 * t * t * (1 - t); 
-    float b3 = t * t * t;
+// Function that multiplies a matrix by a vector and puts the result in res
+void multMatrixVector(float* m, float* v, float* res)
+{
+	for (int j = 0; j < 4; j++) {
+		res[j] = 0;
 
-    return P[0] * b0 + P[1] * b1 + P[2] * b2 + P[3] * b3; 
-}
-
-float bezierDerivative(float P[3], float t) 
-{ 
-    return -3 * (1 - t) * (1 - t) * P[0] + 
-           (3 * (1 - t) * (1 - t) - 6 * t * (1 - t)) * P[1] + 
-           (6 * t * (1 - t) - 3 * t * t) * P[2] + 
-            3 * t * t * P[3]; 
-}
- 
-float bezierPatch(float *controlPoints, float u, float v) 
-{ 
-    float uCurve[4]; 
-    for (int i = 0; i < 4; i++) {
-		uCurve[i] = bezierCurve(controlPoints + 4 * i, u); 
+		for (int k = 0; k < 4; k++) {
+			res[j] += v[k] * m[j * 4 + k];
+		}
 	}
-	return bezierCurve(uCurve, v); 
 }
 
-/* Compute the derivative of a point on Bezier patch along the u parametric direction */
-float bezierDU(float *controlPoints, float u, float v) 
-{ 
-    float P[4]; 
-    float vCurve[4]; 
-    for (int i = 0; i < 4; ++i) { 
-        P[0] = controlPoints[i]; 
-        P[1] = controlPoints[4 + i]; 
-        P[2] = controlPoints[8 + i]; 
-        P[3] = controlPoints[12 + i]; 
-        vCurve[i] = bezierCurve(P, v); 
-    } 
-    return bezierDerivative(vCurve, u); 
+// Bezier's matrix
+float bezierMatrix[4][4] = { { -1.0f, 3.0f, -3.0f, 1.0f },
+                             { 3.0f, -6.0f, 3.0f, 0.0f },
+                             { -3.0f, 3.0f, 0.0f, 0.0f },
+							 { 1.0f, 0.0f, 0.0f, 0.0f } };
+
+// Funct5ion that returns a given Bezier's point
+void getBezierPoint(float u, float v, float** pMatrixX, float** pMatrixY, float** pMatrixZ, float* pos) {
+	float uVec[4] = { u * u * u, u * u, u, 1 };
+	float vVec[4] = { v * v * v, v * v, v, 1 };
+
+	float mvVec[4];
+	float px[4];
+	float py[4];
+	float pz[4];
+
+	float mx[4];
+	float my[4];
+	float mz[4];
+
+	// Calcula M (transposta) * V
+	multMatrixVector((float*)bezierMatrix, vVec, mvVec);
+
+	// Calcula P * resultado anterior
+	multMatrixVector((float*)pMatrixX, mvVec, px);
+	multMatrixVector((float*)pMatrixY, mvVec, py);
+	multMatrixVector((float*)pMatrixZ, mvVec, pz);
+
+	// Calcula M * resultado anterior
+	multMatrixVector((float*)bezierMatrix, px, mx);
+	multMatrixVector((float*)bezierMatrix, py, my);
+	multMatrixVector((float*)bezierMatrix, pz, mz);
+
+	// Calcula U * resultado anterior
+	pos[0] = (uVec[0] * mx[0]) + (uVec[1] * mx[1]) + (uVec[2] * mx[2]) + (uVec[3] * mx[3]);
+	pos[1] = (uVec[0] * my[0]) + (uVec[1] * my[1]) + (uVec[2] * my[2]) + (uVec[3] * my[3]);
+	pos[2] = (uVec[0] * mz[0]) + (uVec[1] * mz[1]) + (uVec[2] * mz[2]) + (uVec[3] * mz[3]);
 }
 
-/* Compute the derivative of a point on Bezier patch along the v parametric direction */
-float bezierDV(float *controlPoints, float u, float v) 
-{ 
-    float uCurve[4];
-    for (int i = 0; i < 4; ++i) { 
-        uCurve[i] = bezierCurve(controlPoints + 4 * i, u); 
-    } 
-    return bezierDerivative(uCurve, v); 
+// Function that generates the points for a Bezier's patch
+void generateBezierPatches(std::vector<CP> pVertices, std::vector<int> pIndexes, int t, std::vector<CP> *vertices, std::vector<int> *indexes) {
+	float pMatrixX[4][4];
+	float pMatrixY[4][4];
+	float pMatrixZ[4][4];
+
+	for (int start = 0; start < pIndexes.size(); start += 16) {
+		for (int i = 0; i <= t; i++) {
+			float u = ((float)i) / ((float)t);
+
+			for (int j = 0; j <= t; j++) {
+				float v = ((float)j) / ((float)t);
+
+				for (int w = 0; w < 4; w++) {
+					for (int z = 0; z < 4; z++) {
+						pMatrixX[w][z] = pVertices.at(pIndexes.at(start + w * 4 + z)).x;
+						pMatrixY[w][z] = pVertices.at(pIndexes.at(start + w * 4 + z)).y;
+						pMatrixZ[w][z] = pVertices.at(pIndexes.at(start + w * 4 + z)).z;
+					}
+				}
+
+				float pos[3];
+				getBezierPoint(u, v, (float**)pMatrixX, (float**)pMatrixY, (float**)pMatrixZ, pos);
+
+				vertices->push_back(CP{pos[0], pos[1], pos[2]});
+			}
+		}
+	}
+
+	for (int start = 0; start < pIndexes.size() / 16; start++) {
+		int patch = (t + 1) * (t + 1) * start;
+
+		for (int i = 0; i < t; i++) {
+			for (int j = 0; j < t; j++) {
+				indexes->push_back(patch + ((t + 1) * i) + j);
+				indexes->push_back(patch + (t + 1) * (i + 1) + j + 1);
+				indexes->push_back(patch + ((t + 1) * i) + j + 1);
+
+				indexes->push_back(patch + ((t + 1) * i) + j);
+				indexes->push_back(patch + (t + 1) * (i + 1) + j);
+				indexes->push_back(patch + (t + 1) * (i + 1) + j + 1);
+			}
+		}
+	}
 }
 
-/* Generate a list of triangles to draw the Bézier surface */
-void bezierGenerate(std::vector<std::vector<int>> patches, std::vector<CP> controlPoints) {
-
-}
-
+// Function that prints a Bezier patches' vertices to outFile
 void printBezier(char *filePatch, int tesselation) {
 	// Open a file with the same name (but ending in ".3d") to output the triangles to
 	std::ifstream patchFile;
@@ -282,24 +322,21 @@ void printBezier(char *filePatch, int tesselation) {
 	// Get the patches
 	patchFile.getline(line, 1000);
 	int numPatches = atoi(line);
-	std::vector<std::vector<int>> patches;
-	patches.reserve(numPatches);
+	std::vector<int> patches;
+	patches.reserve(numPatches*16);
 	for (int i = 0; i < numPatches; i++) {
 		patchFile.getline(line, 1000);
 
-		std::vector<int> toAdd = std::vector<int>();
 		std::string commaSepPatches(line);
 		std::string delimiter = ", ";
 		int pos = 0;
 		std::string token;
 		while ((pos = commaSepPatches.find(delimiter)) != std::string::npos) {
 			token = commaSepPatches.substr(0, pos);
-			toAdd.push_back(std::stoi(token));
+			patches.push_back(std::stoi(token));
 			commaSepPatches.erase(0, pos + delimiter.length());
 		}
-		toAdd.push_back(std::stoi(commaSepPatches));
-
-		patches.push_back(toAdd);
+		patches.push_back(std::stoi(commaSepPatches));
 	}
 
 	// Get the control points
@@ -337,21 +374,14 @@ void printBezier(char *filePatch, int tesselation) {
 		controlPoints.push_back(CP{x, y, z});
 	}
 
-	bezierGenerate(patches, controlPoints);
+	std::vector<CP> vertices;
+	std::vector<int> indexes;
+	generateBezierPatches(controlPoints, patches, tesselation, &vertices, &indexes);
 
-	///// FALTA USAR A TESSELATION PARA A IMAGEM FICAR MELHOR /////
-	/*for (auto patch : patches) {
-		for (int i = 0; i < patch.size()-2; i++) {
-			CP aux = controlPoints.at(patch.at(i));
-			printVertex(aux.x, aux.y, aux.z);
-
-			aux = controlPoints.at(patch.at(i+1));
-			printVertex(aux.x, aux.y, aux.z);
-
-			aux = controlPoints.at(patch.at(i+2));
-			printVertex(aux.x, aux.y, aux.z);
-		}
-	}*/
+	for (int idx : indexes) {
+		CP c = vertices.at(idx);
+		printVertex(c.x, c.y, c.z);
+	}
 
 	patchFile.close();
 	outFile.close();

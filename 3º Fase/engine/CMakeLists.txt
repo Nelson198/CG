@@ -3,6 +3,11 @@
 # Project Name
 PROJECT(engine)
 
+##### CORRIGIR ISTO /////
+find_package(GLEW REQUIRED)
+include_directories(${GLEW_INCLUDE_DIRS})
+link_libraries(${GLEW_LIBRARIES})
+
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 add_executable(${PROJECT_NAME} main.cpp tinyxml2.h tinyxml2.cpp)

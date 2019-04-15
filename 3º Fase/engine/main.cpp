@@ -1,8 +1,10 @@
 #include <stdlib.h>
 
 #ifdef __APPLE__
+#include <GLUT/glew.h>
 #include <GLUT/glut.h>
 #else
+#include <GL/glew.h>
 #include <GL/glut.h>
 #endif
 
@@ -61,11 +63,26 @@ Group mainGroup;
 
 GLdouble dist = 50, beta = M_PI_4, alpha = M_PI_4, xd = 0, zd = 0;
 
-// Function that handles the drawing of a given group
-void drawGroup(Group g) {
+// Vector to store vertex positions
+GLuint buffers[2];
+std::vector<GLfloat> positions, colors;
+int numVertices = 0;
+
+// Function that returns the point resulting from multiplying a 4D matrix by a point
+Vertex multMatrixPoint(float mat[4][4], Vertex v) {
+	float x = mat[0][0]*v.x + mat[0][1]*v.y + mat[0][2]*v.z + mat[0][3];
+	float y = mat[1][0]*v.x + mat[1][1]*v.y + mat[1][2]*v.z + mat[1][3];
+	float z = mat[2][0]*v.x + mat[2][1]*v.y + mat[2][2]*v.z + mat[2][3];
+
+	return Vertex{x, y, z};
+}
+
+// Function that updates the data of a given group
+void updateGroup(Group g) {
 	glPushMatrix();
 
-	bool timeRotated = false, timeTranslated = false;
+	int numRotations = 0;
+	bool timeTranslated = false;
 	float timeRotationParams[4];
 	for (Transformation t: g.trans) {
 		switch (t.type) {
@@ -83,11 +100,11 @@ void drawGroup(Group g) {
 				break;
 
 			case 'I': // Rotate Time
-				timeRotated = true;
 				timeRotationParams[0] = fmod(float(glutGet(GLUT_ELAPSED_TIME))/1000, t.param1)*360/t.param1;
 				timeRotationParams[1] = t.param2;
 				timeRotationParams[2] = t.param3;
 				timeRotationParams[3] = t.param4;
+				numRotations++;
 				glRotatef(timeRotationParams[0], timeRotationParams[1], timeRotationParams[2], timeRotationParams[3]);
 				break;
 
@@ -100,19 +117,30 @@ void drawGroup(Group g) {
 		}
 	}
 
+	float modelviewMatrix[4][4];
+	glGetFloatv(GL_MODELVIEW_MATRIX, &(modelviewMatrix[0][0]));
+
 	glBegin(GL_TRIANGLES);
 	for (Vertex v: g.vert) {
+		Vertex res = multMatrixPoint(modelviewMatrix, v);
+		positions.push_back(res.x);
+		positions.push_back(res.y);
+		positions.push_back(res.z);
+
 		Color c = g.vertColors.at(v);
-		glColor3f(c.R, c.G, c.B);
-		glVertex3f(v.x, v.y, v.z);
+		colors.push_back(c.R);
+		colors.push_back(c.G);
+		colors.push_back(c.B);
+		//glColor3f(c.R, c.G, c.B);
+		//glVertex3f(v.x, v.y, v.z);
 	}
 	glEnd();
 
-	if (timeRotated)
+	if (numRotations == 2)
 		glRotatef(-timeRotationParams[0], timeRotationParams[1], timeRotationParams[2], timeRotationParams[3]);
 
 	for (Group g: g.subGroups)
-		drawGroup(g);
+		updateGroup(g);
 
 	glPopMatrix();
 }
@@ -143,8 +171,8 @@ void renderScene() {
 	// Set the camera
 	glLoadIdentity();
 	gluLookAt(dist*cos(beta)*sin(alpha), dist*sin(beta), dist*cos(beta)*cos(alpha),
-		      0.0, 0.0, 0.0,
-		      0.0f, 1.0f, 0.0f);
+			  0.0, 0.0, 0.0,
+			  0.0f, 1.0f, 0.0f);
 
 	// Translate the vertices to the desired location
 	glTranslatef(xd, 0, zd);
@@ -152,8 +180,21 @@ void renderScene() {
 	// Draw the axis
 	// drawAxis();
 
-	// Draw the scene that was loaded from the XML file
-	drawGroup(mainGroup);
+	// Update the data of the scene that was loaded from the XML file
+	positions.clear();
+	colors.clear();
+	updateGroup(mainGroup);
+
+	// VBO's
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffers[0]);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLfloat) * positions.size(), positions.data(), GL_DYNAMIC_DRAW);
+	glVertexPointer(3, GL_FLOAT, 0, positions.data());
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffers[1]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * colors.size(), colors.data(), GL_DYNAMIC_DRAW);
+	glColorPointer(3, GL_FLOAT, 0, colors.data());
+
+	glDrawArrays(GL_TRIANGLES, 0, positions.size());
 
 	// End of frame
 	glutSwapBuffers();
@@ -306,9 +347,9 @@ Vertex extractVertice(std::string s) {
 
 // Function that processes and adds the vertices from a file to the allVertices vector
 void addVertices(std::ifstream &vertices, Group *group) {
-    char v[100];
-    while (vertices.getline(v, 100))
-        group->vert.push_back(extractVertice(v));
+	char v[100];
+	while (vertices.getline(v, 100))
+		group->vert.push_back(extractVertice(v));
 }
 
 // Function that processes a group's information and returns an object with that info
@@ -318,7 +359,7 @@ Group processGroup(tinyxml2::XMLElement *group) {
 	for (tinyxml2::XMLElement *elem = group->FirstChildElement(); elem != nullptr; elem = elem->NextSiblingElement()) {
 		std::string elemName = elem->Value();
 		if (elemName == "translate") {
-			if (elem->FloatAttribute("time") >= 0) {
+			if (elem->FloatAttribute("time") != 0) {
 				Transformation t = {type: 'M', param1: elem->FloatAttribute("time")};
 				currentG.trans.push_back(t);
 			} else {
@@ -362,6 +403,7 @@ Group processGroup(tinyxml2::XMLElement *group) {
 						currentG.vertColors.insert(std::pair<Vertex,Color>(vertex, toAdd));
 					}
 				}
+				numVertices += currentG.vert.size();
 			}
 		} else if (elemName == "group") {
 			Group child = processGroup(elem);
@@ -417,6 +459,23 @@ int main(int argc, char **argv) {
 	// Resgister callback for keyboard processing
 	glutKeyboardFunc(processKeys);
 	glutSpecialFunc(processSpecialKeys);
+
+#ifndef __APPLE__
+	// Init Glew
+	glewInit();
+#endif
+
+	// Init VBO's
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glEnableClientState(GL_COLOR_ARRAY);
+
+	glGenBuffers(2, buffers);
+	// - Position
+	glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * numVertices * 3, nullptr, GL_DYNAMIC_DRAW);
+	// - Colors
+	glBindBuffer(GL_ARRAY_BUFFER, buffers[1]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * numVertices * 3, nullptr, GL_DYNAMIC_DRAW);
 
 	// Set OpenGL settings
 	glEnable(GL_DEPTH_TEST);

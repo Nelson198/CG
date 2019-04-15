@@ -89,7 +89,6 @@ Vertex multMatrixPoint(float mat[4][4], Vertex v) {
 
 // Function that multiplies a matrix by a vector
 void multMatrixVector(float *m, float *v, float *res) {
-
     for (int j = 0; j < 4; ++j) {
         res[j] = 0;
         for (int k = 0; k < 4; ++k) {
@@ -286,9 +285,8 @@ void renderScene() {
 	positions.clear();
 	colors.clear();
 	updateGroup(mainGroup);
-	
+
 	// VBO's
-	glGenBuffers(2, buffers);
 	// - Position
 	glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * positions.size(), positions.data(), GL_STATIC_DRAW);

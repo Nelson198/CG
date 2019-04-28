@@ -53,10 +53,15 @@ struct Transformation {
 	std::vector<Vertex> catmull;
 };
 
+struct Model {
+	int bufferIdx;
+	std::vector<Vertex> vertices;
+	std::vector<Color> colors;
+};
+
 struct Group {
 	std::vector<Transformation> trans;
-	std::vector<Vertex> vert;
-	std::unordered_map<Vertex,Color,VertexHasher> vertColors;
+	std::vector<Model> models;
 	std::vector<Group> subGroups;
 };
 
@@ -65,9 +70,8 @@ Group mainGroup;
 GLdouble dist = 50, beta = M_PI_4, alpha = M_PI_4, xd = 0, zd = 0;
 
 // Vector to store vertex positions
-GLuint buffers[2];
-std::vector<GLfloat> positions, colors;
-int numVertices = 0;
+GLuint *buffers;
+int numModels = 0, currentModelIdx = 0;
 
 // Function that normalizes a vector
 void normalize(float* a) {
@@ -89,9 +93,9 @@ Vertex multMatrixPoint(float mat[4][4], Vertex v) {
 
 // Function that multiplies a matrix by a vector
 void multMatrixVector(float *m, float *v, float *res) {
-    for (int j = 0; j < 4; ++j) {
+    for (int j = 0; j < 4; j++) {
         res[j] = 0;
-        for (int k = 0; k < 4; ++k) {
+        for (int k = 0; k < 4; k++) {
             res[j] += v[k] * m[j * 4 + k];
         }
     }
@@ -162,8 +166,8 @@ void cross(float *a, float *b, float *res) {
 	res[2] = a[0]*b[1] - a[1]*b[0];
 }
 
-// Function that updates the data of a given group
-void updateGroup(Group g) {
+// Function that draws the data of a given group
+void drawGroup(Group g) {
 	glPushMatrix();
 
 	int numRotations = 0;
@@ -219,29 +223,18 @@ void updateGroup(Group g) {
 
 	float modelviewMatrix[4][4];
 	glGetFloatv(GL_MODELVIEW_MATRIX, &(modelviewMatrix[0][0]));
-
-	glBegin(GL_TRIANGLES);
-	for (Vertex v: g.vert) {
-		Vertex res = multMatrixPoint(modelviewMatrix, v);
-		positions.push_back(res.x);
-		positions.push_back(res.y);
-		positions.push_back(res.z);
-
-		Color c = g.vertColors.at(v);
-		colors.push_back(c.R);
-		colors.push_back(c.G);
-		colors.push_back(c.B);
-
-		glColor3f(c.R, c.G, c.B);
-		glVertex3f(v.x, v.y, v.z);
+	for (Model m : g.models) {
+		glBindBuffer(GL_ARRAY_BUFFER, buffers[m.bufferIdx]);
+		glVertexPointer(3, GL_FLOAT, 0, nullptr);
+		glColorPointer(3, GL_FLOAT, 0, (void *) (m.vertices.size()*3*sizeof(GLfloat)));
+		glDrawArrays(GL_TRIANGLES, 0, m.vertices.size());
 	}
-	glEnd();
 
 	if (numRotations == 2)
 		glRotatef(-timeRotationParams[0], timeRotationParams[1], timeRotationParams[2], timeRotationParams[3]);
 
 	for (Group g: g.subGroups)
-		updateGroup(g);
+		drawGroup(g);
 
 	glPopMatrix();
 }
@@ -281,26 +274,8 @@ void renderScene() {
 	// Draw the axis
 	// drawAxis();
 
-	// Update the data of the scene that was loaded from the XML file
-	positions.clear();
-	colors.clear();
-	updateGroup(mainGroup);
-
-	// VBO's
-	// - Position
-	glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * positions.size(), positions.data(), GL_STATIC_DRAW);
-	// - Colors
-	glBindBuffer(GL_ARRAY_BUFFER, buffers[1]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * colors.size(), colors.data(), GL_DYNAMIC_DRAW);
-
-	glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
-	glVertexPointer(3, GL_FLOAT, 0, positions.data());
-
-	glBindBuffer(GL_ARRAY_BUFFER, buffers[1]);
-	glColorPointer(3, GL_FLOAT, 0, colors.data());
-
-	glDrawArrays(GL_TRIANGLES, 0, positions.size()/3);
+	// Draw the groups generated from the XML file
+	drawGroup(mainGroup);
 
 	// End of frame
 	glutSwapBuffers();
@@ -451,11 +426,14 @@ Vertex extractVertice(std::string s) {
 	return Vertex{x,y,z};
 }
 
-// Function that processes and adds the vertices from a file to the allVertices vector
-void addVertices(std::ifstream &vertices, Group *group) {
+// Function that processes and returns a vector of vertices from a file
+std::vector<Vertex> getVerticesVector(std::ifstream &vertices) {
 	char v[100];
+	std::vector<Vertex> toAdd;
 	while (vertices.getline(v, 100))
-		group->vert.push_back(extractVertice(v));
+		toAdd.push_back(extractVertice(v));
+
+	return toAdd;
 }
 
 // Function that processes a group's information and returns an object with that info
@@ -478,7 +456,7 @@ Group processGroup(tinyxml2::XMLElement *group) {
 		} else if (elemName == "rotate") {
 			if (elem->FloatAttribute("angle") != 0) {
 				Transformation t = {type: 'A', param1: elem->FloatAttribute("angle"), param2: elem->FloatAttribute("axisX"), param3: elem->FloatAttribute("axisY"), param4: elem->FloatAttribute("axisZ")};
-				currentG.trans.push_back(t);			
+				currentG.trans.push_back(t);
 			} else {
 				Transformation t = {type: 'I', param1: elem->FloatAttribute("time"), param2: elem->FloatAttribute("axisX"), param3: elem->FloatAttribute("axisY"), param4: elem->FloatAttribute("axisZ")};
 				currentG.trans.push_back(t);
@@ -489,30 +467,37 @@ Group processGroup(tinyxml2::XMLElement *group) {
 		} else if (elemName == "models") {
 			// Iterate over all the models and load their vertices (including their base color)
 			for (tinyxml2::XMLElement *model = elem->FirstChildElement("model"); model != nullptr; model = model->NextSiblingElement("model")) {
+				Model mdl;
+				mdl.bufferIdx = currentModelIdx++;
+
 				// Extract the vertices
 				std::ifstream myfile;
 				myfile.open(model->Attribute("file"));
-				addVertices(myfile, &currentG);
+				mdl.vertices = getVerticesVector(myfile);
 				myfile.close();
 
 				// Extract the color of the vertices
 				Color c = {model->FloatAttribute("R"), model->FloatAttribute("G"), model->FloatAttribute("B")};
 
 				// Attribute a color to each of the vertices
-				if (c.R != 0 || c.G != 0 || c.B != 0) {
-					for (auto vertex : currentG.vert) {
-						float variation = (rand() / (float) RAND_MAX) / 5;
-						Color toAdd = {c.R + variation, c.G + variation, c.B + variation};
-						currentG.vertColors.insert(std::pair<Vertex,Color>(vertex, toAdd));
+				std::unordered_map<Vertex, Color, VertexHasher> vertColors;
+				for (Vertex vertex : mdl.vertices) {
+					Color clr;
+					try {
+						clr = vertColors.at(vertex);
+					} catch(const std::exception& e) {
+						if (c.R != 0 || c.G != 0 || c.B != 0) {
+							float variation = (rand() / (float) RAND_MAX) / 5;
+							clr = {c.R + variation, c.G + variation, c.B + variation};
+						} else {
+							clr = {rand() / (float) RAND_MAX, rand() / (float) RAND_MAX, rand() / (float) RAND_MAX};
+						}
+						vertColors.insert(std::pair<Vertex,Color>(vertex, clr));
 					}
-				} else {
-					// Give a different color to every vertex, so that a gradient effect is applied
-					for (auto vertex : currentG.vert) {
-						Color toAdd = {rand() / (float) RAND_MAX, rand() / (float) RAND_MAX, rand() / (float) RAND_MAX};
-						currentG.vertColors.insert(std::pair<Vertex,Color>(vertex, toAdd));
-					}
+					mdl.colors.push_back(clr);
 				}
-				numVertices += currentG.vert.size();
+				currentG.models.push_back(mdl);
+				numModels++;
 			}
 		} else if (elemName == "group") {
 			Group child = processGroup(elem);
@@ -542,6 +527,18 @@ void processXML(char **argv) {
 
 	// Process the scene element and all its children
 	mainGroup = processGroup(scene);
+}
+
+void fillBuffers(Group g) {
+	for (Model m : g.models) {
+		glBindBuffer(GL_ARRAY_BUFFER, buffers[m.bufferIdx]);
+		glBufferData(GL_ARRAY_BUFFER, 2 * m.vertices.size() * 3 * sizeof(GLfloat), nullptr, GL_STATIC_DRAW);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, m.vertices.size() * 3 * sizeof(GLfloat), m.vertices.data());
+		glBufferSubData(GL_ARRAY_BUFFER, m.vertices.size() * 3 * sizeof(GLfloat), m.colors.size() * 3 * sizeof(GLfloat), m.colors.data());
+	}
+
+	for (Group sg : g.subGroups)
+		fillBuffers(sg);
 }
 
 int main(int argc, char **argv) {
@@ -578,13 +575,12 @@ int main(int argc, char **argv) {
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glEnableClientState(GL_COLOR_ARRAY);
 
-	glGenBuffers(2, buffers);
-	// - Position
-	glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * numVertices * 3, nullptr, GL_DYNAMIC_DRAW);
-	// - Colors
-	glBindBuffer(GL_ARRAY_BUFFER, buffers[1]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * numVertices * 3, nullptr, GL_DYNAMIC_DRAW);
+	// Generate the VBO buffers
+	buffers = (GLuint *) malloc(numModels*sizeof(GLuint));
+	glGenBuffers(numModels, buffers);
+
+	// Put the data in the buffers
+	fillBuffers(mainGroup);
 
 	// Set OpenGL settings
 	glEnable(GL_DEPTH_TEST);

@@ -40,9 +40,10 @@ struct VertexHasher {
 };
 
 struct Color {
-	float R;
-	float G;
-	float B;
+	float diffR, diffG, diffB;
+	float specR, specG, specB;
+	float emisR, emisG, emisB;
+	float ambiR, ambiG, ambiB;
 };
 
 struct Transformation {
@@ -223,13 +224,16 @@ void drawGroup(Group g) {
 		}
 	}
 
-	float modelviewMatrix[4][4];
-	glGetFloatv(GL_MODELVIEW_MATRIX, &(modelviewMatrix[0][0]));
 	for (Model m : g.models) {
+		if (m.textureIdx != -1)
+			glBindTexture(GL_TEXTURE_2D, m.textureIdx);
+
 		glBindBuffer(GL_ARRAY_BUFFER, buffers[m.bufferIdx]);
 		glVertexPointer(3, GL_FLOAT, 0, nullptr);
 		glColorPointer(3, GL_FLOAT, 0, (void *) (m.vertices.size()*3*sizeof(GLfloat)));
 		glDrawArrays(GL_TRIANGLES, 0, m.vertices.size());
+
+		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 
 	if (numRotations == 2)
@@ -438,6 +442,44 @@ std::vector<Vertex> getVerticesVector(std::ifstream &vertices) {
 	return toAdd;
 }
 
+int loadTexture(std::string s) {
+	// setup - done once
+	ilInit();
+	ilEnable(IL_ORIGIN_SET);
+	ilOriginFunc(IL_ORIGIN_LOWER_LEFT);
+	
+	// for each image
+	unsigned int t;
+	ilGenImages(1,&t);
+	ilBindImage(t);
+	ilLoadImage((ILstring)s.c_str());
+	unsigned int tw = ilGetInteger(IL_IMAGE_WIDTH);
+	unsigned int th = ilGetInteger(IL_IMAGE_HEIGHT);
+	ilConvertImage(IL_RGBA, IL_UNSIGNED_BYTE);
+	unsigned char *texData = ilGetData();
+
+	// create a texture slot
+	unsigned int texID;
+	glGenTextures(1, &texID);
+	
+	// bind the slot
+	glBindTexture(GL_TEXTURE_2D, texID);
+
+	// define texture parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	
+	// send texture data to OpenGL
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tw, th, 0, GL_RGBA, GL_UNSIGNED_BYTE, texData);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	return texID;
+}
+
 // Function that processes a group's information and returns an object with that info
 Group processGroup(tinyxml2::XMLElement *group) {
 	Group currentG;
@@ -480,13 +522,15 @@ Group processGroup(tinyxml2::XMLElement *group) {
 				myfile.close();
 
 				// Check if it has texture field
-				char *texture = model->Attribute("texture")
+				const char *texture = model->Attribute("texture");
 				if (texture) {
-					//printf("TEXTURE!\n");
 					mdl.textureIdx = loadTexture(texture);
 				} else {
 					// Extract the color of the vertices
-					Color c = {model->FloatAttribute("R"), model->FloatAttribute("G"), model->FloatAttribute("B")};
+					Color c = {model->FloatAttribute("diffR"), model->FloatAttribute("diffG"), model->FloatAttribute("diffB"),
+							   model->FloatAttribute("specR"), model->FloatAttribute("specG"), model->FloatAttribute("specB"),
+							   model->FloatAttribute("emisR"), model->FloatAttribute("emisG"), model->FloatAttribute("emisB"),
+							   model->FloatAttribute("ambiR"), model->FloatAttribute("ambiG"), model->FloatAttribute("ambiB")};
 
 					// Attribute a color to each of the vertices
 					std::unordered_map<Vertex, Color, VertexHasher> vertColors;
@@ -495,9 +539,9 @@ Group processGroup(tinyxml2::XMLElement *group) {
 						try {
 							clr = vertColors.at(vertex);
 						} catch(const std::exception& e) {
-							if (c.R != 0 || c.G != 0 || c.B != 0) {
+							if (c.diffR != 0 || c.diffG != 0 || c.diffB != 0) {
 								float variation = (rand() / (float) RAND_MAX) / 5;
-								clr = {c.R + variation, c.G + variation, c.B + variation};
+								clr = {c.diffR + variation, c.diffG + variation, c.diffB + variation};
 							} else {
 								clr = {rand() / (float) RAND_MAX, rand() / (float) RAND_MAX, rand() / (float) RAND_MAX};
 							}
@@ -552,52 +596,14 @@ void fillBuffers(Group g) {
 		fillBuffers(sg);
 }
 
-int loadTexture(std::string s) {
-	unsigned int t, tw, th;
-	unsigned char *texData;
-	unsigned int texID;
-
-	// setup - done once
-	ilInit();
-	ilEnable(IL_ORIGIN_SET);
-	ilOriginFunc(IL_ORIGIN_LOWER_LEFT);
-	
-	// for each image
-	ilGenImages(1,&t);
-	ilBindImage(t);
-	ilLoadImage((ILstring)s.c_str());
-	tw = ilGetInteger(IL_IMAGE_WIDTH);
-	th = ilGetInteger(IL_IMAGE_HEIGHT);
-	ilConvertImage(IL_RGBA, IL_UNSIGNED_BYTE);
-	texData = ilGetData();
-
-	// create a texture slot
-	glGenTextures(1, &texID);
-	
-	// bind the slot
-	glBindTexture(GL_TEXTURE_2D, texID);
-
-	// define texture parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	
-	// send texture data to OpenGL
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tw, th, 0, GL_RGBA, GL_UNSIGNED_BYTE, texData);
-	glGenerateMipmap(GL_TEXTURE_2D);
-
-	glBindTexture(GL_TEXTURE_2D, 0);
-
-	return texID;
-}
-
 int main(int argc, char **argv) {
 	if (argc != 2) {
 		std::cout << "Por favor, forneça um ficheiro XML\n";
 		exit(EXIT_FAILURE);
 	}
+
+	// Textures
+	glEnable(GL_TEXTURE_2D);
 
 	// Processing XML file
 	processXML(argv);
@@ -607,7 +613,7 @@ int main(int argc, char **argv) {
 	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
 	glutInitWindowPosition(100, 100);
 	glutInitWindowSize(800, 800);
-	glutCreateWindow("Fase3TP - Engine");
+	glutCreateWindow("Fase4TP - Engine");
 
 	// Register the required callback 
 	glutDisplayFunc(renderScene);
@@ -637,11 +643,8 @@ int main(int argc, char **argv) {
 	fillBuffers(mainGroup);
 
 	// Light
-	glEnable(GL_LIGHTING);
-	glEnable(GL_LIGHT0);
-
-	// Textures
-	glEnable(GL_TEXTURE_2D);
+	//glEnable(GL_LIGHTING);
+	//glEnable(GL_LIGHT0);
 
 	// Set OpenGL settings
 	glEnable(GL_DEPTH_TEST);

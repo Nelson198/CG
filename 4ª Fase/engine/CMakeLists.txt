@@ -41,9 +41,6 @@ add_definitions(${OpenGL_DEFINITIONS})
 
 add_executable(${PROJECT_NAME} main.cpp tinyxml2.h tinyxml2.cpp)
 
-file(COPY ${CMAKE_SOURCE_DIR}/Oil_Drum001h.jpg DESTINATION ${CMAKE_BINARY_DIR})
-file(COPY ${CMAKE_SOURCE_DIR}/Concrete.jpg DESTINATION ${CMAKE_BINARY_DIR})
-
 if (WIN32)
 	target_link_libraries(${PROJECT_NAME} ${OPENGL_LIBRARIES} glut32 glew32 DevIL)
 	file(COPY ${TOOLKITS_FOLDER}/glew/glew32.dll DESTINATION ${CMAKE_BINARY_DIR})

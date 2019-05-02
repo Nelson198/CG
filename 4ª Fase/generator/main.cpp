@@ -14,23 +14,47 @@ void printVertex(float x, float y, float z) {
 	outFile << x << " " << y << " " << z << "\n";
 }
 
+// Function that prints a normal's coordinates to outFile as "x y z\n"
+void printNormal(float x, float y, float z) {
+	outFile << x << " " << y << " " << z << "\n";
+}
+
+// Function that prints a texture's coordinates to outFile as "x y\n"
+void printTexCoord(float x, float y) {
+	outFile << x << " " << y << "\n";
+}
+
 // Function that prints a plane's vertices to outFile
 void printPlane(int dist) {
+	// Top
 	printVertex(dist/2.0, 0, 0);
+	printNormal(0, 1, 0);
 	printVertex(0, 0, -dist/2.0);
+	printNormal(0, 1, 0);
 	printVertex(-dist/2.0, 0, 0);
+	printNormal(0, 1, 0);
 
 	printVertex(-dist/2.0, 0, 0);
+	printNormal(0, 1, 0);
 	printVertex(0, 0, dist/2.0);
+	printNormal(0, 1, 0);
 	printVertex(dist/2.0, 0, 0);
+	printNormal(0, 1, 0);
 
+	// Bottom
 	printVertex(dist/2.0, 0, 0);
+	printNormal(0, -1, 0);
 	printVertex(0, 0, dist/2.0);
+	printNormal(0, -1, 0);
 	printVertex(-dist/2.0, 0, 0);
+	printNormal(0, -1, 0);
 
 	printVertex(-dist/2.0, 0, 0);
+	printNormal(0, -1, 0);
 	printVertex(0, 0, -dist/2.0);
+	printNormal(0, -1, 0);
 	printVertex(dist/2.0, 0, 0);
+	printNormal(0, -1, 0);
 }
 
 // Function that prints a box's vertices to outFile
@@ -44,69 +68,105 @@ void printBox(int dimX, int dimY, int dimZ, int divisions) {
 			xOffset = dimX/2.0 - i*dimX/(float)divisions, yOffset = dimY/2.0, zOffset = dimZ/2.0 - j*dimZ/(float)divisions;
 			nextXOffset = xOffset - dimX/(float)divisions, nextZOffset = zOffset - dimZ/(float)divisions;
 			printVertex(xOffset, yOffset, zOffset);
+			printNormal(0, 1, 0);
 			printVertex(xOffset, yOffset, nextZOffset);
+			printNormal(0, 1, 0);
 			printVertex(nextXOffset, yOffset, nextZOffset);
+			printNormal(0, 1, 0);
 
 			printVertex(nextXOffset, yOffset, nextZOffset);
+			printNormal(0, 1, 0);
 			printVertex(nextXOffset, yOffset, zOffset);
+			printNormal(0, 1, 0);
 			printVertex(xOffset, yOffset, zOffset);
+			printNormal(0, 1, 0);
 
 			// Lateral triangles
 			// (+x, y, z)
 			xOffset = dimX/2.0, yOffset = dimY/2.0 - i*dimY/(float)divisions, zOffset = dimZ/2.0 - j*dimZ/(float)divisions;
 			nextYOffset = yOffset - dimY/(float)divisions, nextZOffset = zOffset - dimZ/(float)divisions;
 			printVertex(xOffset, yOffset, zOffset);
+			printNormal(1, 0, 0);
 			printVertex(xOffset, nextYOffset, zOffset);
+			printNormal(1, 0, 0);
 			printVertex(xOffset, nextYOffset, nextZOffset);
+			printNormal(1, 0, 0);
 
 			printVertex(xOffset, yOffset, zOffset);
+			printNormal(1, 0, 0);
 			printVertex(xOffset, nextYOffset, nextZOffset);
+			printNormal(1, 0, 0);
 			printVertex(xOffset, yOffset, nextZOffset);
+			printNormal(1, 0, 0);
 
 			// (x, y, -z)
 			xOffset = dimX/2.0 - j*dimX/(float)divisions, yOffset = dimY/2.0 - i*dimY/(float)divisions, zOffset = -dimZ/2.0;
 			nextXOffset = xOffset - dimX/(float)divisions, nextYOffset = yOffset - dimY/(float)divisions;
 			printVertex(xOffset, yOffset, zOffset);
+			printNormal(0, 0, -1);
 			printVertex(xOffset, nextYOffset, zOffset);
+			printNormal(0, 0, -1);
 			printVertex(nextXOffset, nextYOffset, zOffset);
+			printNormal(0, 0, -1);
 
 			printVertex(xOffset, yOffset, zOffset);
+			printNormal(0, 0, -1);
 			printVertex(nextXOffset, nextYOffset, zOffset);
+			printNormal(0, 0, -1);
 			printVertex(nextXOffset, yOffset, zOffset);
+			printNormal(0, 0, -1);
 
 			// (-x, y, z)
 			xOffset = -dimX/2.0, yOffset = dimY/2.0 - i*dimY/(float)divisions, zOffset = -dimZ/2.0 + j*dimZ/(float)divisions;
 			nextYOffset = yOffset - dimY/(float)divisions, nextZOffset = zOffset + dimZ/(float)divisions;
 			printVertex(xOffset, yOffset, zOffset);
+			printNormal(-1, 0, 0);
 			printVertex(xOffset, nextYOffset, zOffset);
+			printNormal(-1, 0, 0);
 			printVertex(xOffset, nextYOffset, nextZOffset);
+			printNormal(-1, 0, 0);
 
 			printVertex(xOffset, yOffset, zOffset);
+			printNormal(-1, 0, 0);
 			printVertex(xOffset, nextYOffset, nextZOffset);
+			printNormal(-1, 0, 0);
 			printVertex(xOffset, yOffset, nextZOffset);
+			printNormal(-1, 0, 0);
 
 			// (x, y, +z)
 			xOffset = -dimX/2.0 + j*dimX/(float)divisions, yOffset = dimY/2.0 - i*dimY/(float)divisions, zOffset = dimZ/2.0;
 			nextXOffset = xOffset + dimX/(float)divisions, nextYOffset = yOffset - dimY/(float)divisions;
 			printVertex(xOffset, yOffset, zOffset);
+			printNormal(0, 0, 1);
 			printVertex(xOffset, nextYOffset, zOffset);
+			printNormal(0, 0, 1);
 			printVertex(nextXOffset, nextYOffset, zOffset);
+			printNormal(0, 0, 1);
 
 			printVertex(xOffset, yOffset, zOffset);
+			printNormal(0, 0, 1);
 			printVertex(nextXOffset, nextYOffset, zOffset);
+			printNormal(0, 0, 1);
 			printVertex(nextXOffset, yOffset, zOffset);
+			printNormal(0, 0, 1);
 
 			// Bottom triangles
 			// (x, -y, z)
 			xOffset = dimX/2.0 - i*dimX/(float)divisions, yOffset = -dimY/2.0, zOffset = dimZ/2.0 - j*dimZ/(float)divisions;
 			nextXOffset = xOffset - dimX/(float)divisions, nextZOffset = zOffset - dimZ/(float)divisions;
 			printVertex(xOffset, yOffset, zOffset);
+			printNormal(0, -1, 0);
 			printVertex(nextXOffset, yOffset, nextZOffset);
+			printNormal(0, -1, 0);
 			printVertex(xOffset, yOffset, nextZOffset);
+			printNormal(0, -1, 0);
 
 			printVertex(nextXOffset, yOffset, nextZOffset);
+			printNormal(0, -1, 0);
 			printVertex(xOffset, yOffset, zOffset);
+			printNormal(0, -1, 0);
 			printVertex(nextXOffset, yOffset, zOffset);
+			printNormal(0, -1, 0);
 		}
 	}
 }
@@ -127,33 +187,38 @@ void printSphere(int radius, int slices, int stacks) {
 
 		// The 0.5 adjustement in the for loop is to alternate between the triangles of
 		// adjacent stacks, so that they align correctly with each other
-		for (float i = 0.5*(j%2); i < slices + 0.5*(j%2); i++) {
+		for (float i = 0; i < slices; i++) {
 			// Triangles with the tip pointing up of the upper dome
 			printVertex(r*sin(i*sliceDelta), height, r*cos(i*sliceDelta));
+			printNormal(r*sin(i*sliceDelta), height, r*cos(i*sliceDelta));
 			printVertex(r*sin((i + 1)*sliceDelta), height, r*cos((i + 1)*sliceDelta));
-			printVertex(nextR*sin((i + 0.5)*sliceDelta), nextHeight, nextR*cos((i + 0.5)*sliceDelta));
+			printNormal(r*sin((i + 1)*sliceDelta), height, r*cos((i + 1)*sliceDelta));
+			printVertex(nextR*sin((i + 1)*sliceDelta), nextHeight, nextR*cos((i + 1)*sliceDelta));
+			printNormal(nextR*sin((i + 1)*sliceDelta), nextHeight, nextR*cos((i + 1)*sliceDelta));
 
 			// Triangles with the tip pointing up of the lower dome
 			printVertex(r*sin(i*sliceDelta), -height, r*cos(i*sliceDelta));
-			printVertex(nextR*sin((i + 0.5)*sliceDelta), -nextHeight, nextR*cos((i + 0.5)*sliceDelta));
+			printNormal(r*sin(i*sliceDelta), -height, r*cos(i*sliceDelta));
+			printVertex(nextR*sin((i + 1)*sliceDelta), -nextHeight, nextR*cos((i + 1)*sliceDelta));
+			printNormal(nextR*sin((i + 1)*sliceDelta), -nextHeight, nextR*cos((i + 1)*sliceDelta));
 			printVertex(r*sin((i + 1)*sliceDelta), -height, r*cos((i + 1)*sliceDelta));
-
-
-			// This 0.5 adjustement (and the one below) is to offset the triangles in the same
-			// stack, so that they don't end up on top of each other
-			i += 0.5;
+			printNormal(r*sin((i + 1)*sliceDelta), -height, r*cos((i + 1)*sliceDelta));
 
 			// Triangles with the tip pointing down of the upper dome
 			printVertex(nextR*sin((i + 1)*sliceDelta), nextHeight, nextR*cos((i + 1)*sliceDelta));
+			printNormal(nextR*sin((i + 1)*sliceDelta), nextHeight, nextR*cos((i + 1)*sliceDelta));
 			printVertex(nextR*sin(i*sliceDelta), nextHeight, nextR*cos(i*sliceDelta));
-			printVertex(r*sin((i + 0.5)*sliceDelta), height, r*cos((i + 0.5)*sliceDelta));
+			printNormal(nextR*sin(i*sliceDelta), nextHeight, nextR*cos(i*sliceDelta));
+			printVertex(r*sin(i*sliceDelta), height, r*cos(i*sliceDelta));
+			printNormal(r*sin(i*sliceDelta), height, r*cos(i*sliceDelta));
 
 			// Triangles with the tip pointing up of the lower dome
 			printVertex(nextR*sin((i + 1)*sliceDelta), -nextHeight, nextR*cos((i + 1)*sliceDelta));
-			printVertex(r*sin((i + 0.5)*sliceDelta), -height, r*cos((i + 0.5)*sliceDelta));
+			printNormal(nextR*sin((i + 1)*sliceDelta), -nextHeight, nextR*cos((i + 1)*sliceDelta));
+			printVertex(r*sin(i*sliceDelta), -height, r*cos(i*sliceDelta));
+			printNormal(r*sin(i*sliceDelta), -height, r*cos(i*sliceDelta));
 			printVertex(nextR*sin(i*sliceDelta), -nextHeight, nextR*cos(i*sliceDelta));
-
-			i -= 0.5;
+			printNormal(nextR*sin(i*sliceDelta), -nextHeight, nextR*cos(i*sliceDelta));
 		}
 		r = nextR;
 	}
@@ -168,8 +233,11 @@ void printCone(int bottomRadius, int height, int slices, int stacks) {
 	// Draw the bottom circle
 	for (float i = 0; i < slices; i++) {
 		printVertex(0, 0, 0);
+		printNormal(0, -1, 0);
 		printVertex(r*sin((i+1)*sliceDelta), 0, r*cos((i+1)*sliceDelta));
+		printNormal(0, -1, 0);
 		printVertex(r*sin(i*sliceDelta), 0, r*cos(i*sliceDelta));
+		printNormal(0, -1, 0);
 	}
 
 	float rnext = r - (bottomRadius/((float)stacks));
@@ -177,6 +245,8 @@ void printCone(int bottomRadius, int height, int slices, int stacks) {
 	for(int j = 0; j < stacks; j++) {
 		float h = j*(((float)height)/stacks);
 		float hnext = (j+1)*(((float)height)/stacks);
+
+		// COMPLETAR NORMAIS ! COMPLETAR NORMAIS ! COMPLETAR NORMAIS ! COMPLETAR NORMAIS ! COMPLETAR NORMAIS !
 
 		// The 0.5 adjustement in the for loop is to alternate between the triangles of
 		// adjacent stacks, so that they align correctly with each other
@@ -381,6 +451,8 @@ void printBezier(char *filePatch, int tesselation) {
 	for (int idx : indexes) {
 		CP c = vertices.at(idx);
 		printVertex(c.x, c.y, c.z);
+		// COMPLETAR NORMAL ! COMPLETAR NORMAL ! COMPLETAR NORMAL ! COMPLETAR NORMAL ! COMPLETAR NORMAL !
+		// printNormal();
 	}
 
 	patchFile.close();

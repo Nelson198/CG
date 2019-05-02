@@ -56,6 +56,7 @@ struct Transformation {
 
 struct Model {
 	int bufferIdx;
+	int textureIdx;
 	std::vector<Vertex> vertices;
 	std::vector<Color> colors;
 };
@@ -469,6 +470,7 @@ Group processGroup(tinyxml2::XMLElement *group) {
 			// Iterate over all the models and load their vertices (including their base color)
 			for (tinyxml2::XMLElement *model = elem->FirstChildElement("model"); model != nullptr; model = model->NextSiblingElement("model")) {
 				Model mdl;
+				mdl.textureIdx = -1;
 				mdl.bufferIdx = currentModelIdx++;
 
 				// Extract the vertices
@@ -477,26 +479,34 @@ Group processGroup(tinyxml2::XMLElement *group) {
 				mdl.vertices = getVerticesVector(myfile);
 				myfile.close();
 
-				// Extract the color of the vertices
-				Color c = {model->FloatAttribute("R"), model->FloatAttribute("G"), model->FloatAttribute("B")};
+				// Check if it has texture field
+				char *texture = model->Attribute("texture")
+				if (texture) {
+					//printf("TEXTURE!\n");
+					mdl.textureIdx = loadTexture(texture);
+				} else {
+					// Extract the color of the vertices
+					Color c = {model->FloatAttribute("R"), model->FloatAttribute("G"), model->FloatAttribute("B")};
 
-				// Attribute a color to each of the vertices
-				std::unordered_map<Vertex, Color, VertexHasher> vertColors;
-				for (Vertex vertex : mdl.vertices) {
-					Color clr;
-					try {
-						clr = vertColors.at(vertex);
-					} catch(const std::exception& e) {
-						if (c.R != 0 || c.G != 0 || c.B != 0) {
-							float variation = (rand() / (float) RAND_MAX) / 5;
-							clr = {c.R + variation, c.G + variation, c.B + variation};
-						} else {
-							clr = {rand() / (float) RAND_MAX, rand() / (float) RAND_MAX, rand() / (float) RAND_MAX};
+					// Attribute a color to each of the vertices
+					std::unordered_map<Vertex, Color, VertexHasher> vertColors;
+					for (Vertex vertex : mdl.vertices) {
+						Color clr;
+						try {
+							clr = vertColors.at(vertex);
+						} catch(const std::exception& e) {
+							if (c.R != 0 || c.G != 0 || c.B != 0) {
+								float variation = (rand() / (float) RAND_MAX) / 5;
+								clr = {c.R + variation, c.G + variation, c.B + variation};
+							} else {
+								clr = {rand() / (float) RAND_MAX, rand() / (float) RAND_MAX, rand() / (float) RAND_MAX};
+							}
+							vertColors.insert(std::pair<Vertex,Color>(vertex, clr));
 						}
-						vertColors.insert(std::pair<Vertex,Color>(vertex, clr));
+						mdl.colors.push_back(clr);
 					}
-					mdl.colors.push_back(clr);
 				}
+
 				currentG.models.push_back(mdl);
 				numModels++;
 			}

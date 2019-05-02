@@ -15,6 +15,7 @@
 #include <fstream>
 #include <vector>
 #include <unordered_map>
+#include <IL/il.h>
 
 #include "tinyxml2.h"
 
@@ -541,6 +542,47 @@ void fillBuffers(Group g) {
 		fillBuffers(sg);
 }
 
+int loadTexture(std::string s) {
+	unsigned int t, tw, th;
+	unsigned char *texData;
+	unsigned int texID;
+
+	// setup - done once
+	ilInit();
+	ilEnable(IL_ORIGIN_SET);
+	ilOriginFunc(IL_ORIGIN_LOWER_LEFT);
+	
+	// for each image
+	ilGenImages(1,&t);
+	ilBindImage(t);
+	ilLoadImage((ILstring)s.c_str());
+	tw = ilGetInteger(IL_IMAGE_WIDTH);
+	th = ilGetInteger(IL_IMAGE_HEIGHT);
+	ilConvertImage(IL_RGBA, IL_UNSIGNED_BYTE);
+	texData = ilGetData();
+
+	// create a texture slot
+	glGenTextures(1, &texID);
+	
+	// bind the slot
+	glBindTexture(GL_TEXTURE_2D, texID);
+
+	// define texture parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	
+	// send texture data to OpenGL
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tw, th, 0, GL_RGBA, GL_UNSIGNED_BYTE, texData);
+	glGenerateMipmap(GL_TEXTURE_2D);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	return texID;
+}
+
 int main(int argc, char **argv) {
 	if (argc != 2) {
 		std::cout << "Por favor, forneça um ficheiro XML\n";
@@ -574,6 +616,8 @@ int main(int argc, char **argv) {
 	// Init VBO's
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glEnableClientState(GL_COLOR_ARRAY);
+	glEnableClientState(GL_NORMAL_ARRAY);
+	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
 	// Generate the VBO buffers
 	buffers = (GLuint *) malloc(numModels*sizeof(GLuint));
@@ -581,6 +625,13 @@ int main(int argc, char **argv) {
 
 	// Put the data in the buffers
 	fillBuffers(mainGroup);
+
+	// Light
+	glEnable(GL_LIGHTING);
+	glEnable(GL_LIGHT0);
+
+	// Textures
+	glEnable(GL_TEXTURE_2D);
 
 	// Set OpenGL settings
 	glEnable(GL_DEPTH_TEST);

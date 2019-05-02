@@ -19,9 +19,9 @@ void printNormal(float x, float y, float z) {
 	outFile << x << " " << y << " " << z << "\n";
 }
 
-// Function that prints a texture's coordinates to outFile as "x y\n"
-void printTexCoord(float x, float y) {
-	outFile << x << " " << y << "\n";
+// Function that prints a texture's coordinates to outFile as "s t\n"
+void printTexCoord(float s, float t) {
+	outFile << s << " " << t << "\n";
 }
 
 // Function that prints a plane's vertices to outFile
@@ -191,34 +191,46 @@ void printSphere(int radius, int slices, int stacks) {
 			// Triangles with the tip pointing up of the upper dome
 			printVertex(r*sin(i*sliceDelta), height, r*cos(i*sliceDelta));
 			printNormal(r*sin(i*sliceDelta), height, r*cos(i*sliceDelta));
+			printTexCoord(i/(slices-1), 0.5 + j/(((float)stacks)/2-1)*0.5);
 			printVertex(r*sin((i + 1)*sliceDelta), height, r*cos((i + 1)*sliceDelta));
 			printNormal(r*sin((i + 1)*sliceDelta), height, r*cos((i + 1)*sliceDelta));
+			printTexCoord(i/(slices-1), 0.5 + j/(((float)stacks)/2-1)*0.5);
 			printVertex(nextR*sin((i + 1)*sliceDelta), nextHeight, nextR*cos((i + 1)*sliceDelta));
 			printNormal(nextR*sin((i + 1)*sliceDelta), nextHeight, nextR*cos((i + 1)*sliceDelta));
+			printTexCoord(i/(slices-1), 0.5 + j/(((float)stacks)/2-1)*0.5);
 
 			// Triangles with the tip pointing up of the lower dome
 			printVertex(r*sin(i*sliceDelta), -height, r*cos(i*sliceDelta));
 			printNormal(r*sin(i*sliceDelta), -height, r*cos(i*sliceDelta));
+			printTexCoord(i/(slices-1), 0.5 - j/(((float)stacks)/2-1)*0.5);
 			printVertex(nextR*sin((i + 1)*sliceDelta), -nextHeight, nextR*cos((i + 1)*sliceDelta));
 			printNormal(nextR*sin((i + 1)*sliceDelta), -nextHeight, nextR*cos((i + 1)*sliceDelta));
+			printTexCoord(i/(slices-1), 0.5 - j/(((float)stacks)/2-1)*0.5);
 			printVertex(r*sin((i + 1)*sliceDelta), -height, r*cos((i + 1)*sliceDelta));
 			printNormal(r*sin((i + 1)*sliceDelta), -height, r*cos((i + 1)*sliceDelta));
+			printTexCoord(i/(slices-1), 0.5 - j/(((float)stacks)/2-1)*0.5);
 
 			// Triangles with the tip pointing down of the upper dome
 			printVertex(nextR*sin((i + 1)*sliceDelta), nextHeight, nextR*cos((i + 1)*sliceDelta));
 			printNormal(nextR*sin((i + 1)*sliceDelta), nextHeight, nextR*cos((i + 1)*sliceDelta));
+			printTexCoord(i/(slices-1), 0.5 + j/(((float)stacks)/2-1)*0.5);
 			printVertex(nextR*sin(i*sliceDelta), nextHeight, nextR*cos(i*sliceDelta));
 			printNormal(nextR*sin(i*sliceDelta), nextHeight, nextR*cos(i*sliceDelta));
+			printTexCoord(i/(slices-1), 0.5 + j/(((float)stacks)/2-1)*0.5);
 			printVertex(r*sin(i*sliceDelta), height, r*cos(i*sliceDelta));
 			printNormal(r*sin(i*sliceDelta), height, r*cos(i*sliceDelta));
+			printTexCoord(i/(slices-1), 0.5 + j/(((float)stacks)/2-1)*0.5);
 
 			// Triangles with the tip pointing up of the lower dome
 			printVertex(nextR*sin((i + 1)*sliceDelta), -nextHeight, nextR*cos((i + 1)*sliceDelta));
 			printNormal(nextR*sin((i + 1)*sliceDelta), -nextHeight, nextR*cos((i + 1)*sliceDelta));
+			printTexCoord(i/(slices-1), 0.5 - j/(((float)stacks)/2-1)*0.5);
 			printVertex(r*sin(i*sliceDelta), -height, r*cos(i*sliceDelta));
 			printNormal(r*sin(i*sliceDelta), -height, r*cos(i*sliceDelta));
+			printTexCoord(i/(slices-1), 0.5 - j/(((float)stacks)/2-1)*0.5);
 			printVertex(nextR*sin(i*sliceDelta), -nextHeight, nextR*cos(i*sliceDelta));
 			printNormal(nextR*sin(i*sliceDelta), -nextHeight, nextR*cos(i*sliceDelta));
+			printTexCoord(i/(slices-1), 0.5 - j/(((float)stacks)/2-1)*0.5);
 		}
 		r = nextR;
 	}

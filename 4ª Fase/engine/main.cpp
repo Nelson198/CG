@@ -20,9 +20,7 @@
 #include "tinyxml2.h"
 
 struct Vertex {
-	float x;
-	float y;
-	float z;
+	float x, y, z;
 
 	bool operator==(const Vertex &other) const {
 		return (x == other.x && y == other.y && z == other.z);
@@ -41,9 +39,13 @@ struct VertexHasher {
 
 struct Color {
 	float diffR, diffG, diffB;
-	float specR, specG, specB;
-	float emisR, emisG, emisB;
-	float ambiR, ambiG, ambiB;
+	//float specR, specG, specB;
+	//float emisR, emisG, emisB;
+	//float ambiR, ambiG, ambiB;
+};
+
+struct TexCoord {
+	float s, t;
 };
 
 struct Transformation {
@@ -59,6 +61,8 @@ struct Model {
 	int bufferIdx;
 	int textureIdx;
 	std::vector<Vertex> vertices;
+	std::vector<Vertex> normals;
+	std::vector<TexCoord> texCoords;
 	std::vector<Color> colors;
 };
 
@@ -68,6 +72,11 @@ struct Group {
 	std::vector<Group> subGroups;
 };
 
+struct Light {
+	int idx;
+	float x, y, z, w;
+};
+
 Group mainGroup;
 
 GLdouble dist = 50, beta = M_PI_4, alpha = M_PI_4, xd = 0, zd = 0;
@@ -75,6 +84,7 @@ GLdouble dist = 50, beta = M_PI_4, alpha = M_PI_4, xd = 0, zd = 0;
 // Vector to store vertex positions
 GLuint *buffers;
 int numModels = 0, currentModelIdx = 0;
+std::vector<Light> sceneLights;
 
 // Function that normalizes a vector
 void normalize(float* a) {
@@ -83,15 +93,6 @@ void normalize(float* a) {
 	a[0] = a[0] / l;
 	a[1] = a[1] / l;
 	a[2] = a[2] / l;
-}
-
-// Function that returns the point resulting from multiplying a 4D matrix by a point
-Vertex multMatrixPoint(float mat[4][4], Vertex v) {
-	float x = mat[0][0]*v.x + mat[0][1]*v.y + mat[0][2]*v.z + mat[0][3];
-	float y = mat[1][0]*v.x + mat[1][1]*v.y + mat[1][2]*v.z + mat[1][3];
-	float z = mat[2][0]*v.x + mat[2][1]*v.y + mat[2][2]*v.z + mat[2][3];
-
-	return Vertex{x, y, z};
 }
 
 // Function that multiplies a matrix by a vector
@@ -231,6 +232,8 @@ void drawGroup(Group g) {
 		glBindBuffer(GL_ARRAY_BUFFER, buffers[m.bufferIdx]);
 		glVertexPointer(3, GL_FLOAT, 0, nullptr);
 		glColorPointer(3, GL_FLOAT, 0, (void *) (m.vertices.size()*3*sizeof(GLfloat)));
+		glNormalPointer(GL_FLOAT, 0, (void *) ((m.vertices.size() + m.colors.size())*3*sizeof(GLfloat)));
+		glTexCoordPointer(2, GL_FLOAT, 0, (void *) ((m.vertices.size() + m.colors.size() + m.normals.size())*3*sizeof(GLfloat)));
 		glDrawArrays(GL_TRIANGLES, 0, m.vertices.size());
 
 		glBindTexture(GL_TEXTURE_2D, 0);
@@ -273,6 +276,12 @@ void renderScene() {
 	gluLookAt(dist*cos(beta)*sin(alpha), dist*sin(beta), dist*cos(beta)*cos(alpha),
 			  0.0, 0.0, 0.0,
 			  0.0f, 1.0f, 0.0f);
+
+	// Turn the lights on
+	for (Light l : sceneLights) {
+		float pos[4] = {l.x, l.y, l.z, l.w};
+		glLightfv(GL_LIGHT0 + l.idx, GL_POSITION, pos);
+	}
 
 	// Translate the vertices to the desired location
 	glTranslatef(xd, 0, zd);
@@ -432,48 +441,73 @@ Vertex extractVertice(std::string s) {
 	return Vertex{x,y,z};
 }
 
-// Function that processes and returns a vector of vertices from a file
-std::vector<Vertex> getVerticesVector(std::ifstream &vertices) {
-	char v[100];
-	std::vector<Vertex> toAdd;
-	while (vertices.getline(v, 100))
-		toAdd.push_back(extractVertice(v));
+// Function that creates a texCoord object from its string representation "s t"
+TexCoord extractTexCoord(std::string str) {
+	std::string delimiter = " ";
+	float s, t;
+	int pos;
+	std::string token;
 
-	return toAdd;
+	// Process the s coordinate
+	pos = str.find(delimiter);
+	token = str.substr(0, pos);
+	s = atof(token.c_str());
+	str.erase(0, pos + delimiter.length());
+
+	// Process the t coordinate
+	pos = str.find(delimiter);
+	token = str.substr(0, pos);
+	t = atof(token.c_str());
+
+	return TexCoord{s,t};
+}
+
+// Function that adds the vertices and the normals to a model from a file
+void addVerticesNormals(std::ifstream &vertices, Model *mdl) {
+	char v[100];
+	int lineType = 0;
+	while (vertices.getline(v, 100)) {
+		if (lineType == 0)
+			mdl->vertices.push_back(extractVertice(v));
+		else if (lineType == 1)
+			mdl->normals.push_back(extractVertice(v));
+		else {
+			mdl->texCoords.push_back(extractTexCoord(v));
+			lineType = -1;
+		}
+		lineType++;
+	}
 }
 
 int loadTexture(std::string s) {
-	// setup - done once
 	ilInit();
 	ilEnable(IL_ORIGIN_SET);
 	ilOriginFunc(IL_ORIGIN_LOWER_LEFT);
 	
-	// for each image
 	unsigned int t;
 	ilGenImages(1,&t);
 	ilBindImage(t);
-	ilLoadImage((ILstring)s.c_str());
+	bool ok = ilLoadImage((ILstring)s.c_str());
+	if (!ok) {
+		printf("Ficheiro de textura ãno encontrado\n");
+	}
 	unsigned int tw = ilGetInteger(IL_IMAGE_WIDTH);
 	unsigned int th = ilGetInteger(IL_IMAGE_HEIGHT);
 	ilConvertImage(IL_RGBA, IL_UNSIGNED_BYTE);
 	unsigned char *texData = ilGetData();
 
-	// create a texture slot
 	unsigned int texID;
 	glGenTextures(1, &texID);
-	
-	// bind the slot
-	glBindTexture(GL_TEXTURE_2D, texID);
 
-	// define texture parameters
+	glBindTexture(GL_TEXTURE_2D, texID);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	
-	// send texture data to OpenGL
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tw, th, 0, GL_RGBA, GL_UNSIGNED_BYTE, texData);
+	//glGenerateMipmap(GL_TEXTURE_2D);
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -518,7 +552,8 @@ Group processGroup(tinyxml2::XMLElement *group) {
 				// Extract the vertices
 				std::ifstream myfile;
 				myfile.open(model->Attribute("file"));
-				mdl.vertices = getVerticesVector(myfile);
+				addVerticesNormals(myfile, &mdl);
+
 				myfile.close();
 
 				// Check if it has texture field
@@ -528,9 +563,10 @@ Group processGroup(tinyxml2::XMLElement *group) {
 				} else {
 					// Extract the color of the vertices
 					Color c = {model->FloatAttribute("diffR"), model->FloatAttribute("diffG"), model->FloatAttribute("diffB"),
-							   model->FloatAttribute("specR"), model->FloatAttribute("specG"), model->FloatAttribute("specB"),
-							   model->FloatAttribute("emisR"), model->FloatAttribute("emisG"), model->FloatAttribute("emisB"),
-							   model->FloatAttribute("ambiR"), model->FloatAttribute("ambiG"), model->FloatAttribute("ambiB")};
+							   //model->FloatAttribute("specR"), model->FloatAttribute("specG"), model->FloatAttribute("specB"),
+							   //model->FloatAttribute("emisR"), model->FloatAttribute("emisG"), model->FloatAttribute("emisB"),
+							   //model->FloatAttribute("ambiR"), model->FloatAttribute("ambiG"), model->FloatAttribute("ambiB")};
+					};
 
 					// Attribute a color to each of the vertices
 					std::unordered_map<Vertex, Color, VertexHasher> vertColors;
@@ -580,6 +616,40 @@ void processXML(char **argv) {
 		exit(EXIT_FAILURE);
 	}
 
+	// Check if any light source is defined
+	tinyxml2::XMLElement *lights = scene->FirstChildElement("lights");
+	if (lights) {
+		glEnable(GL_LIGHTING);
+
+		int lightIdx = 0;
+		for (tinyxml2::XMLElement *light = lights->FirstChildElement("light"); light != nullptr; light = light->NextSiblingElement("light")) {
+			glEnable(GL_LIGHT0 + lightIdx);
+
+			GLfloat amb[4] = {0.2f, 0.2f, 0.2f, 1.0f};
+			GLfloat diff[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+			glLightfv(GL_LIGHT0 + lightIdx, GL_AMBIENT, amb);
+			glLightfv(GL_LIGHT0 + lightIdx, GL_DIFFUSE, diff);
+
+			Light lt;
+			std::string type = light->Attribute("type");
+			if (type == "POINT") {
+				lt.x = light->FloatAttribute("posX");
+				lt.y = light->FloatAttribute("posY");
+				lt.z = light->FloatAttribute("posZ");
+				lt.w = 1;
+			} else if (type == "DIRECTIONAL") {
+				lt.x = light->FloatAttribute("dirX");
+				lt.y = light->FloatAttribute("dirY");
+				lt.z = light->FloatAttribute("dirZ");
+				lt.w = 0;
+			} else if (type == "SPOT") {
+				// ACABAR //
+			}
+			sceneLights.push_back(lt);
+			lightIdx++;
+		}
+	}
+
 	// Process the scene element and all its children
 	mainGroup = processGroup(scene);
 }
@@ -590,6 +660,8 @@ void fillBuffers(Group g) {
 		glBufferData(GL_ARRAY_BUFFER, 2 * m.vertices.size() * 3 * sizeof(GLfloat), nullptr, GL_STATIC_DRAW);
 		glBufferSubData(GL_ARRAY_BUFFER, 0, m.vertices.size() * 3 * sizeof(GLfloat), m.vertices.data());
 		glBufferSubData(GL_ARRAY_BUFFER, m.vertices.size() * 3 * sizeof(GLfloat), m.colors.size() * 3 * sizeof(GLfloat), m.colors.data());
+		glBufferSubData(GL_ARRAY_BUFFER, (m.vertices.size() + m.normals.size()) * 3 * sizeof(GLfloat), m.normals.size() * 3 * sizeof(GLfloat), m.normals.data());
+		glBufferSubData(GL_ARRAY_BUFFER, (m.vertices.size() + m.normals.size() + m.colors.size()) * 3 * sizeof(GLfloat), m.texCoords.size() * 2 * sizeof(GLfloat), m.texCoords.data());
 	}
 
 	for (Group sg : g.subGroups)
@@ -641,10 +713,6 @@ int main(int argc, char **argv) {
 
 	// Put the data in the buffers
 	fillBuffers(mainGroup);
-
-	// Light
-	//glEnable(GL_LIGHTING);
-	//glEnable(GL_LIGHT0);
 
 	// Set OpenGL settings
 	glEnable(GL_DEPTH_TEST);

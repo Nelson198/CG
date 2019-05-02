@@ -22,7 +22,7 @@
 			<point X="0" Y="-11" Z="0" />
 			<point X="-9" Y="-9" Z="0" />
 		</translate>
-		<scale X="1" Y="1" Z="1"/>
+		<scale X="0.5" Y="0.5" Z="0.5"/>
 		<models>
 			<model file="../../teapot.3d" R="0.96" G="0.69" B="0.69" />
 		</models>
@@ -30,7 +30,7 @@
 
 	<group>
 		<!-- MERCURY -->
-		<rotate time="88" axisY="1"/>
+		<rotate time="9" axisY="1"/>
 		<translate Z="-5"/>
 		<rotate time="58" axisY="1"/>
 		<scale X="0.1" Y="0.1" Z="0.1"/>
@@ -40,7 +40,7 @@
 	</group>
 	<group>
 		<!-- VENUS -->
-		<rotate time="225" axisY="1"/>
+		<rotate time="22" axisY="1"/>
 		<translate Z="-10"/>
 		<rotate time="116" axisX="-1"/>
 		<scale X="0.3" Y="0.3" Z="0.3"/>
@@ -50,7 +50,7 @@
 	</group>
 	<group>
 		<!-- EARTH -->
-		<rotate time="365" axisY="1"/>
+		<rotate time="36" axisY="1"/>
 		<translate Z="-15"/>
 		<rotate time="1" axisY="1"/>
 		<scale X="0.3" Y="0.3" Z="0.3"/>
@@ -59,7 +59,7 @@
 		</models>
 		<group>
 			<!-- MOON -->
-			<rotate time="27" axisY="1"/>
+			<rotate time="5" axisY="1"/>
 			<translate Z="2.7"/>
 			<rotate time="27" axisY="1"/>
 			<scale X="0.15" Y="0.15" Z="0.15"/>
@@ -70,7 +70,7 @@
 	</group>
 	<group>
 		<!-- MARS -->
-		<rotate time="687" axisY="1"/>
+		<rotate time="69" axisY="1"/>
 		<translate Z="-18"/>
 		<rotate time="1" axisY="1"/>
 		<scale X="0.3" Y="0.3" Z="0.3"/>
@@ -80,7 +80,7 @@
 	</group>
 	<group>
 		<!-- JUPITER -->
-		<rotate time="4332" axisY="1"/>
+		<rotate time="433" axisY="1"/>
 		<translate Z="-28"/>
 		<rotate time="0.4" axisY="1"/>
 		<models>
@@ -89,7 +89,7 @@
 	</group>
 	<group>
 		<!-- SATURN -->
-		<rotate time="10755" axisY="1"/>
+		<rotate time="1075" axisY="1"/>
 		<translate Z="-33"/>
 		<rotate time="0.42" axisY="1"/>
 		<scale X="0.8" Y="0.8" Z="0.8"/>
@@ -99,7 +99,7 @@
 	</group>
 	<group>
 		<!-- URANUS -->
-		<rotate time="30687" axisY="1"/>
+		<rotate time="3069" axisY="1"/>
 		<translate Z="-38"/>
 		<rotate time="0.70" axisY="1"/>
 		<scale X="0.6" Y="0.6" Z="0.6"/>
@@ -109,7 +109,7 @@
 	</group>
 	<group>
 		<!-- NEPTUN -->
-		<rotate time="60190" axisY="1"/>
+		<rotate time="6019" axisY="1"/>
 		<translate Z="-43"/>
 		<rotate time="0.67" axisY="1"/>
 		<scale X="0.6" Y="0.6" Z="0.6"/>

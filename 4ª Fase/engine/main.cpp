@@ -230,10 +230,17 @@ void drawGroup(Group g) {
 			glBindTexture(GL_TEXTURE_2D, m.textureIdx);
 
 		glBindBuffer(GL_ARRAY_BUFFER, buffers[m.bufferIdx]);
-		glVertexPointer(3, GL_FLOAT, 0, nullptr);
-		glColorPointer(3, GL_FLOAT, 0, (void *) (m.vertices.size()*3*sizeof(GLfloat)));
-		glNormalPointer(GL_FLOAT, 0, (void *) ((m.vertices.size() + m.colors.size())*3*sizeof(GLfloat)));
-		glTexCoordPointer(2, GL_FLOAT, 0, (void *) ((m.vertices.size() + m.colors.size() + m.normals.size())*3*sizeof(GLfloat)));
+		glVertexPointer(3, GL_FLOAT, 0, 0);
+		glNormalPointer(GL_FLOAT, 0, (void *) ((m.vertices.size())*3*sizeof(GLfloat)));
+		if (m.textureIdx == -1) {
+			glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+			glEnableClientState(GL_COLOR_ARRAY);
+			glColorPointer(3, GL_FLOAT, 0, (void *) ((m.vertices.size() + m.normals.size())*3*sizeof(GLfloat)));
+		} else {
+			glDisableClientState(GL_COLOR_ARRAY);
+			glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+			glTexCoordPointer(2, GL_FLOAT, 0, (void *) ((m.vertices.size() + m.normals.size())*3*sizeof(GLfloat)));
+		}
 		glDrawArrays(GL_TRIANGLES, 0, m.vertices.size());
 
 		glBindTexture(GL_TEXTURE_2D, 0);
@@ -284,10 +291,10 @@ void renderScene() {
 	}
 
 	// Translate the vertices to the desired location
-	glTranslatef(xd, 0, zd);
+	//glTranslatef(xd, 0, zd);
 
 	// Draw the axis
-	// drawAxis();
+	drawAxis();
 
 	// Draw the groups generated from the XML file
 	drawGroup(mainGroup);
@@ -480,34 +487,32 @@ void addVerticesNormals(std::ifstream &vertices, Model *mdl) {
 }
 
 int loadTexture(std::string s) {
+	unsigned int t,tw,th;
+	unsigned char *texData;
+	unsigned int texID;
+
 	ilInit();
 	ilEnable(IL_ORIGIN_SET);
 	ilOriginFunc(IL_ORIGIN_LOWER_LEFT);
-	
-	unsigned int t;
 	ilGenImages(1,&t);
 	ilBindImage(t);
-	bool ok = ilLoadImage((ILstring)s.c_str());
-	if (!ok) {
-		printf("Ficheiro de textura ãno encontrado\n");
-	}
-	unsigned int tw = ilGetInteger(IL_IMAGE_WIDTH);
-	unsigned int th = ilGetInteger(IL_IMAGE_HEIGHT);
+	ilLoadImage((ILstring)s.c_str());
+	tw = ilGetInteger(IL_IMAGE_WIDTH);
+	th = ilGetInteger(IL_IMAGE_HEIGHT);
 	ilConvertImage(IL_RGBA, IL_UNSIGNED_BYTE);
-	unsigned char *texData = ilGetData();
+	texData = ilGetData();
 
-	unsigned int texID;
-	glGenTextures(1, &texID);
+	glGenTextures(1,&texID);
 
-	glBindTexture(GL_TEXTURE_2D, texID);
+	glBindTexture(GL_TEXTURE_2D,texID);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	
+		
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tw, th, 0, GL_RGBA, GL_UNSIGNED_BYTE, texData);
-	//glGenerateMipmap(GL_TEXTURE_2D);
+	glGenerateMipmap(GL_TEXTURE_2D);
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -657,11 +662,13 @@ void processXML(char **argv) {
 void fillBuffers(Group g) {
 	for (Model m : g.models) {
 		glBindBuffer(GL_ARRAY_BUFFER, buffers[m.bufferIdx]);
-		glBufferData(GL_ARRAY_BUFFER, 2 * m.vertices.size() * 3 * sizeof(GLfloat), nullptr, GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, 3 * m.vertices.size() * 3 * sizeof(GLfloat), nullptr, GL_STATIC_DRAW);
 		glBufferSubData(GL_ARRAY_BUFFER, 0, m.vertices.size() * 3 * sizeof(GLfloat), m.vertices.data());
-		glBufferSubData(GL_ARRAY_BUFFER, m.vertices.size() * 3 * sizeof(GLfloat), m.colors.size() * 3 * sizeof(GLfloat), m.colors.data());
-		glBufferSubData(GL_ARRAY_BUFFER, (m.vertices.size() + m.normals.size()) * 3 * sizeof(GLfloat), m.normals.size() * 3 * sizeof(GLfloat), m.normals.data());
-		glBufferSubData(GL_ARRAY_BUFFER, (m.vertices.size() + m.normals.size() + m.colors.size()) * 3 * sizeof(GLfloat), m.texCoords.size() * 2 * sizeof(GLfloat), m.texCoords.data());
+		glBufferSubData(GL_ARRAY_BUFFER, m.vertices.size() * 3 * sizeof(GLfloat), m.normals.size() * 3 * sizeof(GLfloat), m.normals.data());
+		if (m.textureIdx == -1)
+			glBufferSubData(GL_ARRAY_BUFFER, (m.vertices.size() + m.normals.size()) * 3 * sizeof(GLfloat), m.colors.size() * 3 * sizeof(GLfloat), m.colors.data());
+		else
+			glBufferSubData(GL_ARRAY_BUFFER, (m.vertices.size() + m.normals.size()) * 3 * sizeof(GLfloat), m.texCoords.size() * 2 * sizeof(GLfloat), m.texCoords.data());
 	}
 
 	for (Group sg : g.subGroups)
@@ -673,12 +680,6 @@ int main(int argc, char **argv) {
 		std::cout << "Por favor, forneça um ficheiro XML\n";
 		exit(EXIT_FAILURE);
 	}
-
-	// Textures
-	glEnable(GL_TEXTURE_2D);
-
-	// Processing XML file
-	processXML(argv);
 
 	// Init GLUT and the window
 	glutInit(&argc, argv);
@@ -701,11 +702,23 @@ int main(int argc, char **argv) {
 	glewInit();
 #endif
 
-	// Init VBO's
 	glEnableClientState(GL_VERTEX_ARRAY);
-	glEnableClientState(GL_COLOR_ARRAY);
 	glEnableClientState(GL_NORMAL_ARRAY);
 	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+	glEnableClientState(GL_COLOR_ARRAY);
+
+	// Set OpenGL settings
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
+
+	// Textures
+	glEnable(GL_TEXTURE_2D);
+
+	// Change the size of the points
+	glPointSize(3);
+
+	// Processing XML file
+	processXML(argv);
 
 	// Generate the VBO buffers
 	buffers = (GLuint *) malloc(numModels*sizeof(GLuint));
@@ -713,12 +726,6 @@ int main(int argc, char **argv) {
 
 	// Put the data in the buffers
 	fillBuffers(mainGroup);
-
-	// Set OpenGL settings
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_CULL_FACE);
-
-	glPointSize(3);
 
 	// Enter GLUT's main cycle
 	glutMainLoop();

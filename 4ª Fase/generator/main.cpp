@@ -174,9 +174,9 @@ void printBox(int dimX, int dimY, int dimZ, int divisions) {
 // Function that prints a sphere's vertices to outFile
 void printSphere(int radius, int slices, int stacks) {
 	// Angle of a single slice
-	double sliceDelta = 2 * M_PI / slices;
+	double sliceDelta = 2 * M_PI / (slices-1);
 	// Angle of a single stack
-	double betaDelta = M_PI_2 / (stacks / 2);
+	double betaDelta = M_PI_2 / (stacks / 2 - 1);
 
 	float r = radius;
 	// Generate the lower and upper stacks at the same time
@@ -185,8 +185,6 @@ void printSphere(int radius, int slices, int stacks) {
 		float height = radius*sin(betaDelta*(j));
 		float nextHeight = radius*sin(betaDelta*(j+1));
 
-		// The 0.5 adjustement in the for loop is to alternate between the triangles of
-		// adjacent stacks, so that they align correctly with each other
 		for (float i = 0; i < slices; i++) {
 			// Triangles with the tip pointing up of the upper dome
 			printVertex(r*sin(i*sliceDelta), height, r*cos(i*sliceDelta));
@@ -194,10 +192,10 @@ void printSphere(int radius, int slices, int stacks) {
 			printTexCoord(i/(slices-1), 0.5 + j/(((float)stacks)/2-1)*0.5);
 			printVertex(r*sin((i + 1)*sliceDelta), height, r*cos((i + 1)*sliceDelta));
 			printNormal(r*sin((i + 1)*sliceDelta), height, r*cos((i + 1)*sliceDelta));
-			printTexCoord(i/(slices-1), 0.5 + j/(((float)stacks)/2-1)*0.5);
+			printTexCoord((i+1)/(slices-1), 0.5 + j/(((float)stacks)/2-1)*0.5);
 			printVertex(nextR*sin((i + 1)*sliceDelta), nextHeight, nextR*cos((i + 1)*sliceDelta));
 			printNormal(nextR*sin((i + 1)*sliceDelta), nextHeight, nextR*cos((i + 1)*sliceDelta));
-			printTexCoord(i/(slices-1), 0.5 + j/(((float)stacks)/2-1)*0.5);
+			printTexCoord((i+1)/(slices-1), 0.5 + (j+1)/(((float)stacks)/2-1)*0.5);
 
 			// Triangles with the tip pointing up of the lower dome
 			printVertex(r*sin(i*sliceDelta), -height, r*cos(i*sliceDelta));
@@ -205,18 +203,18 @@ void printSphere(int radius, int slices, int stacks) {
 			printTexCoord(i/(slices-1), 0.5 - j/(((float)stacks)/2-1)*0.5);
 			printVertex(nextR*sin((i + 1)*sliceDelta), -nextHeight, nextR*cos((i + 1)*sliceDelta));
 			printNormal(nextR*sin((i + 1)*sliceDelta), -nextHeight, nextR*cos((i + 1)*sliceDelta));
-			printTexCoord(i/(slices-1), 0.5 - j/(((float)stacks)/2-1)*0.5);
+			printTexCoord((i+1)/(slices-1), 0.5 - (j+1)/(((float)stacks)/2-1)*0.5);
 			printVertex(r*sin((i + 1)*sliceDelta), -height, r*cos((i + 1)*sliceDelta));
 			printNormal(r*sin((i + 1)*sliceDelta), -height, r*cos((i + 1)*sliceDelta));
-			printTexCoord(i/(slices-1), 0.5 - j/(((float)stacks)/2-1)*0.5);
+			printTexCoord((i+1)/(slices-1), 0.5 - j/(((float)stacks)/2-1)*0.5);
 
 			// Triangles with the tip pointing down of the upper dome
 			printVertex(nextR*sin((i + 1)*sliceDelta), nextHeight, nextR*cos((i + 1)*sliceDelta));
 			printNormal(nextR*sin((i + 1)*sliceDelta), nextHeight, nextR*cos((i + 1)*sliceDelta));
-			printTexCoord(i/(slices-1), 0.5 + j/(((float)stacks)/2-1)*0.5);
+			printTexCoord((i+1)/(slices-1), 0.5 + (j+1)/(((float)stacks)/2-1)*0.5);
 			printVertex(nextR*sin(i*sliceDelta), nextHeight, nextR*cos(i*sliceDelta));
 			printNormal(nextR*sin(i*sliceDelta), nextHeight, nextR*cos(i*sliceDelta));
-			printTexCoord(i/(slices-1), 0.5 + j/(((float)stacks)/2-1)*0.5);
+			printTexCoord(i/(slices-1), 0.5 + (j+1)/(((float)stacks)/2-1)*0.5);
 			printVertex(r*sin(i*sliceDelta), height, r*cos(i*sliceDelta));
 			printNormal(r*sin(i*sliceDelta), height, r*cos(i*sliceDelta));
 			printTexCoord(i/(slices-1), 0.5 + j/(((float)stacks)/2-1)*0.5);
@@ -224,13 +222,13 @@ void printSphere(int radius, int slices, int stacks) {
 			// Triangles with the tip pointing up of the lower dome
 			printVertex(nextR*sin((i + 1)*sliceDelta), -nextHeight, nextR*cos((i + 1)*sliceDelta));
 			printNormal(nextR*sin((i + 1)*sliceDelta), -nextHeight, nextR*cos((i + 1)*sliceDelta));
-			printTexCoord(i/(slices-1), 0.5 - j/(((float)stacks)/2-1)*0.5);
+			printTexCoord((i+1)/(slices-1), 0.5 - (j + 1)/(((float)stacks)/2-1)*0.5);
 			printVertex(r*sin(i*sliceDelta), -height, r*cos(i*sliceDelta));
 			printNormal(r*sin(i*sliceDelta), -height, r*cos(i*sliceDelta));
 			printTexCoord(i/(slices-1), 0.5 - j/(((float)stacks)/2-1)*0.5);
 			printVertex(nextR*sin(i*sliceDelta), -nextHeight, nextR*cos(i*sliceDelta));
 			printNormal(nextR*sin(i*sliceDelta), -nextHeight, nextR*cos(i*sliceDelta));
-			printTexCoord(i/(slices-1), 0.5 - j/(((float)stacks)/2-1)*0.5);
+			printTexCoord(i/(slices-1), 0.5 - (j + 1)/(((float)stacks)/2-1)*0.5);
 		}
 		r = nextR;
 	}

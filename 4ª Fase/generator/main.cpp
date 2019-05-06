@@ -9,6 +9,15 @@
 
 std::ofstream outFile;
 
+// Function that normalizes a vector
+void normalize(float* a) {
+	float l = sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2]);
+
+	a[0] = a[0] / l;
+	a[1] = a[1] / l;
+	a[2] = a[2] / l;
+}
+
 // Function that prints a vertex's coordinates to outFile as "x y z\n"
 void printVertex(float x, float y, float z) {
 	outFile << x << " " << y << " " << z << "\n";
@@ -16,7 +25,9 @@ void printVertex(float x, float y, float z) {
 
 // Function that prints a normal's coordinates to outFile as "x y z\n"
 void printNormal(float x, float y, float z) {
-	outFile << x << " " << y << " " << z << "\n";
+	float normal[3] = {x, y, z};
+	normalize(normal);
+	outFile << normal[0] << " " << normal[1] << " " << normal[2] << "\n";
 }
 
 // Function that prints a texture's coordinates to outFile as "s t\n"
@@ -297,15 +308,6 @@ void cross(float *a, float *b, float *res) {
 	res[2] = a[0]*b[1] - a[1]*b[0];
 }
 
-// Function that normalizes a vector
-void normalize(float* a) {
-	float l = sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2]);
-
-	a[0] = a[0] / l;
-	a[1] = a[1] / l;
-	a[2] = a[2] / l;
-}
-
 // Function that multiplies a matrix by a vector and puts the result in res
 void multMatrixVector(float* m, float* v, float* res) {
 	for (int j = 0; j < 4; j++) {
@@ -531,6 +533,7 @@ void printBezier(char *filePatch, int tesselation) {
 		CP n = normals.at(idx);
 		printVertex(v.x, v.y, v.z);
 		printNormal(n.x, n.y, n.z);
+		printTexCoord(0, 0);
 	}
 
 	patchFile.close();

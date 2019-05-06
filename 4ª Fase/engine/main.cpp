@@ -294,9 +294,11 @@ void renderScene() {
 	glTranslatef(xd, 0, zd);
 
 	// Draw the axis
-	drawAxis();
+	// drawAxis();
 
 	// Draw the groups generated from the XML file
+	float diff[4] = {0.1,0.1,0.1,1};
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, diff);
 	drawGroup(mainGroup);
 
 	// End of frame
@@ -487,21 +489,19 @@ void addVerticesNormals(std::ifstream &vertices, Model *mdl) {
 }
 
 int loadTexture(std::string s) {
-	unsigned int t,tw,th;
-	unsigned char *texData;
-	unsigned int texID;
-
 	ilInit();
 	ilEnable(IL_ORIGIN_SET);
 	ilOriginFunc(IL_ORIGIN_LOWER_LEFT);
+
+	unsigned int t;
 	ilGenImages(1,&t);
 	ilBindImage(t);
 	ilLoadImage((ILstring)s.c_str());
-	tw = ilGetInteger(IL_IMAGE_WIDTH);
-	th = ilGetInteger(IL_IMAGE_HEIGHT);
+	unsigned int tw = ilGetInteger(IL_IMAGE_WIDTH);
+	unsigned int th = ilGetInteger(IL_IMAGE_HEIGHT);
 	ilConvertImage(IL_RGBA, IL_UNSIGNED_BYTE);
-	texData = ilGetData();
 
+	unsigned int texID;
 	glGenTextures(1,&texID);
 
 	glBindTexture(GL_TEXTURE_2D,texID);
@@ -511,7 +511,7 @@ int loadTexture(std::string s) {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 		
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tw, th, 0, GL_RGBA, GL_UNSIGNED_BYTE, texData);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tw, th, 0, GL_RGBA, GL_UNSIGNED_BYTE, ilGetData());
 	glGenerateMipmap(GL_TEXTURE_2D);
 
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -567,7 +567,7 @@ Group processGroup(tinyxml2::XMLElement *group) {
 					mdl.textureIdx = loadTexture(texture);
 				} else {
 					// Extract the color of the vertices
-					Color c = {model->FloatAttribute("diffR"), model->FloatAttribute("diffG"), model->FloatAttribute("diffB"),
+					Color c = {model->FloatAttribute("diffR"), model->FloatAttribute("diffG"), model->FloatAttribute("diffB")
 							   //model->FloatAttribute("specR"), model->FloatAttribute("specG"), model->FloatAttribute("specB"),
 							   //model->FloatAttribute("emisR"), model->FloatAttribute("emisG"), model->FloatAttribute("emisB"),
 							   //model->FloatAttribute("ambiR"), model->FloatAttribute("ambiG"), model->FloatAttribute("ambiB")};

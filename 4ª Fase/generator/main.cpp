@@ -290,9 +290,24 @@ struct CP {
 	float z;
 };
 
+// Function that calculates the cross product betqween two vectors
+void cross(float *a, float *b, float *res) {
+	res[0] = a[1]*b[2] - a[2]*b[1];
+	res[1] = a[2]*b[0] - a[0]*b[2];
+	res[2] = a[0]*b[1] - a[1]*b[0];
+}
+
+// Function that normalizes a vector
+void normalize(float* a) {
+	float l = sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2]);
+
+	a[0] = a[0] / l;
+	a[1] = a[1] / l;
+	a[2] = a[2] / l;
+}
+
 // Function that multiplies a matrix by a vector and puts the result in res
-void multMatrixVector(float* m, float* v, float* res)
-{
+void multMatrixVector(float* m, float* v, float* res) {
 	for (int j = 0; j < 4; j++) {
 		res[j] = 0;
 
@@ -308,19 +323,14 @@ float bezierMatrix[4][4] = { { -1.0f, 3.0f, -3.0f, 1.0f },
                              { -3.0f, 3.0f, 0.0f, 0.0f },
 							 { 1.0f, 0.0f, 0.0f, 0.0f } };
 
-// Funct5ion that returns a given Bezier's point
+// Function that returns a given Bezier's point
 void getBezierPoint(float u, float v, float** pMatrixX, float** pMatrixY, float** pMatrixZ, float* pos) {
 	float uVec[4] = { u * u * u, u * u, u, 1 };
 	float vVec[4] = { v * v * v, v * v, v, 1 };
 
 	float mvVec[4];
-	float px[4];
-	float py[4];
-	float pz[4];
-
-	float mx[4];
-	float my[4];
-	float mz[4];
+	float px[4], py[4], pz[4];
+	float mx[4], my[4], mz[4];
 
 	// Calcula M (transposta) * V
 	multMatrixVector((float*)bezierMatrix, vVec, mvVec);
@@ -341,8 +351,58 @@ void getBezierPoint(float u, float v, float** pMatrixX, float** pMatrixY, float*
 	pos[2] = (uVec[0] * mz[0]) + (uVec[1] * mz[1]) + (uVec[2] * mz[2]) + (uVec[3] * mz[3]);
 }
 
+// Function that returns a given Bezier's tangent vectors
+void getBezierTangents(float u, float v, float** pMatrixX, float** pMatrixY, float** pMatrixZ, float* tangent1, float* tangent2) {
+	float uVec[4] = { u * u * u, u * u, u, 1 };
+	float vVec[4] = { v * v * v, v * v, v, 1};
+	float udVec[4] = { 3 * u * u, 2 * u, 1, 0 };
+	float vdVec[4] = { 3 * v * v, 2 * v, 1, 0 };
+
+	float mvVec[4];
+	float px[4], py[4], pz[4];
+	float mx[4], my[4], mz[4];
+
+	// Calcula M (transposta) * V (transposta)
+	multMatrixVector((float*)bezierMatrix, vVec, mvVec);
+
+	// Calcula P * resultado anterior
+	multMatrixVector((float*)pMatrixX, mvVec, px);
+	multMatrixVector((float*)pMatrixY, mvVec, py);
+	multMatrixVector((float*)pMatrixZ, mvVec, pz);
+
+	// Calcula M * resultado anterior
+	multMatrixVector((float*)bezierMatrix, px, mx);
+	multMatrixVector((float*)bezierMatrix, py, my);
+	multMatrixVector((float*)bezierMatrix, pz, mz);
+
+	// Calcula U (derivada) * resultado anterior
+	// Tangente nº 1
+	tangent1[0] = (udVec[0] * mx[0]) + (udVec[1] * mx[1]) + (udVec[2] * mx[2]) + (udVec[3] * mx[3]);
+	tangent1[1] = (udVec[0] * my[0]) + (udVec[1] * my[1]) + (udVec[2] * my[2]) + (udVec[3] * my[3]);
+	tangent1[2] = (udVec[0] * mz[0]) + (udVec[1] * mz[1]) + (udVec[2] * mz[2]) + (udVec[3] * mz[3]);
+
+	// Calcula M (transposta) * V (derivada)
+	multMatrixVector((float*)bezierMatrix, vdVec, mvVec);
+
+	// Calcula P * resultado anterior
+	multMatrixVector((float*)pMatrixX, mvVec, px);
+	multMatrixVector((float*)pMatrixY, mvVec, py);
+	multMatrixVector((float*)pMatrixZ, mvVec, pz);
+
+	// Calcula M * resultado anterior
+	multMatrixVector((float*)bezierMatrix, px, mx);
+	multMatrixVector((float*)bezierMatrix, py, my);
+	multMatrixVector((float*)bezierMatrix, pz, mz);
+
+	// Calcula U * resultado anterior
+	// Tangente nº 2
+	tangent2[0] = (uVec[0] * mx[0]) + (uVec[1] * mx[1]) + (uVec[2] * mx[2]) + (uVec[3] * mx[3]);
+	tangent2[1] = (uVec[0] * my[0]) + (uVec[1] * my[1]) + (uVec[2] * my[2]) + (uVec[3] * my[3]);
+	tangent2[2] = (uVec[0] * mz[0]) + (uVec[1] * mz[1]) + (uVec[2] * mz[2]) + (uVec[3] * mz[3]);
+}
+
 // Function that generates the points for a Bezier's patch
-void generateBezierPatches(std::vector<CP> pVertices, std::vector<int> pIndexes, int t, std::vector<CP> *vertices, std::vector<int> *indexes) {
+void generateBezierPatches(std::vector<CP> pVertices, std::vector<int> pIndexes, int t, std::vector<CP> *vertices, std::vector<CP> *normals, std::vector<int> *indexes) {
 	float pMatrixX[4][4];
 	float pMatrixY[4][4];
 	float pMatrixZ[4][4];
@@ -363,9 +423,16 @@ void generateBezierPatches(std::vector<CP> pVertices, std::vector<int> pIndexes,
 				}
 
 				float pos[3];
+				float tangent1[3], tangent2[3];
+				float normal[3];
+
 				getBezierPoint(u, v, (float**)pMatrixX, (float**)pMatrixY, (float**)pMatrixZ, pos);
+				getBezierTangents(u, v, (float**)pMatrixX, (float**)pMatrixY, (float**)pMatrixZ, tangent1, tangent2);
+				cross(tangent1, tangent2, normal);
+				normalize(normal);
 
 				vertices->push_back(CP{pos[0], pos[1], pos[2]});
+				normals->push_back(CP{normal[0], normal[1], normal[2]});
 			}
 		}
 	}
@@ -455,14 +522,15 @@ void printBezier(char *filePatch, int tesselation) {
 	}
 
 	std::vector<CP> vertices;
+	std::vector<CP> normals;
 	std::vector<int> indexes;
-	generateBezierPatches(controlPoints, patches, tesselation, &vertices, &indexes);
+	generateBezierPatches(controlPoints, patches, tesselation, &vertices, &normals, &indexes);
 
 	for (int idx : indexes) {
-		CP c = vertices.at(idx);
-		printVertex(c.x, c.y, c.z);
-		// COMPLETAR NORMAL ! COMPLETAR NORMAL ! COMPLETAR NORMAL ! COMPLETAR NORMAL ! COMPLETAR NORMAL !
-		// printNormal();
+		CP v = vertices.at(idx);
+		CP n = normals.at(idx);
+		printVertex(v.x, v.y, v.z);
+		printNormal(n.x, n.y, n.z);
 	}
 
 	patchFile.close();

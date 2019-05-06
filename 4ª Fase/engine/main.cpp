@@ -291,7 +291,7 @@ void renderScene() {
 	}
 
 	// Translate the vertices to the desired location
-	//glTranslatef(xd, 0, zd);
+	glTranslatef(xd, 0, zd);
 
 	// Draw the axis
 	drawAxis();

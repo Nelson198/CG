@@ -8,7 +8,7 @@
 		<rotate time="27" axisY="1"/>
 		<scale X="2" Y="2" Z="2"/>
 		<models>
-			<model file="../planet.3d" texture="../../textures/sun.jpg"/>
+			<model file="../planet.3d" texture="../../textures/sun.jpg" shin="100"/>
 		</models>
 	</group>
 
@@ -28,7 +28,7 @@
 		</translate>
 		<scale X="0.5" Y="0.5" Z="0.5"/>
 		<models>
-			<model file="../../teapot.3d" diffR="0.96" diffG="0.69" diffB="0.69" />
+			<model file="../../teapot.3d" diffR="0.16" diffG="0.69" diffB="0.69"/>
 		</models>
 	</group>
 

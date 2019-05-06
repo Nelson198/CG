@@ -14,34 +14,19 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include <unordered_map>
 #include <IL/il.h>
 
 #include "tinyxml2.h"
 
 struct Vertex {
 	float x, y, z;
-
-	bool operator==(const Vertex &other) const {
-		return (x == other.x && y == other.y && z == other.z);
-  }
-};
-
-struct VertexHasher {
-	std::size_t operator()(const Vertex& k) const {
-		using std::size_t;
-		using std::hash;
-		using std::string;
-
-		return ((hash<float>()(k.x) ^ (hash<float>()(k.y) << 1)) >> 1) ^ (hash<float>()(k.z) << 1);
-	}
 };
 
 struct Color {
-	float diffR, diffG, diffB;
-	//float specR, specG, specB;
-	//float emisR, emisG, emisB;
-	//float ambiR, ambiG, ambiB;
+	float diffR, diffG, diffB, diffA;
+	float specR, specG, specB, specA;
+	float ambiR, ambiG, ambiB, ambiA;
+	float shin;
 };
 
 struct TexCoord {
@@ -63,7 +48,7 @@ struct Model {
 	std::vector<Vertex> vertices;
 	std::vector<Vertex> normals;
 	std::vector<TexCoord> texCoords;
-	std::vector<Color> colors;
+	Color color;
 };
 
 struct Group {
@@ -229,21 +214,26 @@ void drawGroup(Group g) {
 		if (m.textureIdx != -1)
 			glBindTexture(GL_TEXTURE_2D, m.textureIdx);
 
+		float diff[4] = {m.color.diffR, m.color.diffG, m.color.diffB, m.color.diffA};
+		glMaterialfv(GL_FRONT, GL_DIFFUSE, diff);
+		float ambi[4] = {m.color.ambiR, m.color.ambiG, m.color.ambiB, m.color.ambiA};
+		glMaterialfv(GL_FRONT, GL_AMBIENT, ambi);
+		float spec[4] = {m.color.specR, m.color.specG, m.color.specB, m.color.specA};
+		glMaterialfv(GL_FRONT, GL_SPECULAR, spec);
+		float shin[1] = {m.color.shin};
+		glMaterialfv(GL_FRONT, GL_SHININESS, shin);
+
 		glBindBuffer(GL_ARRAY_BUFFER, buffers[m.bufferIdx]);
 		glVertexPointer(3, GL_FLOAT, 0, 0);
 		glNormalPointer(GL_FLOAT, 0, (void *) ((m.vertices.size())*3*sizeof(GLfloat)));
-		if (m.textureIdx == -1) {
-			glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-			glEnableClientState(GL_COLOR_ARRAY);
-			glColorPointer(3, GL_FLOAT, 0, (void *) ((m.vertices.size() + m.normals.size())*3*sizeof(GLfloat)));
-		} else {
-			glDisableClientState(GL_COLOR_ARRAY);
+		if (m.textureIdx != -1) {
 			glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 			glTexCoordPointer(2, GL_FLOAT, 0, (void *) ((m.vertices.size() + m.normals.size())*3*sizeof(GLfloat)));
 		}
 		glDrawArrays(GL_TRIANGLES, 0, m.vertices.size());
 
 		glBindTexture(GL_TEXTURE_2D, 0);
+		glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 	}
 
 	if (numRotations == 2)
@@ -297,8 +287,6 @@ void renderScene() {
 	// drawAxis();
 
 	// Draw the groups generated from the XML file
-	float diff[4] = {0.1,0.1,0.1,1};
-	glMaterialfv(GL_FRONT, GL_DIFFUSE, diff);
 	drawGroup(mainGroup);
 
 	// End of frame
@@ -565,32 +553,32 @@ Group processGroup(tinyxml2::XMLElement *group) {
 				const char *texture = model->Attribute("texture");
 				if (texture) {
 					mdl.textureIdx = loadTexture(texture);
-				} else {
-					// Extract the color of the vertices
-					Color c = {model->FloatAttribute("diffR"), model->FloatAttribute("diffG"), model->FloatAttribute("diffB")
-							   //model->FloatAttribute("specR"), model->FloatAttribute("specG"), model->FloatAttribute("specB"),
-							   //model->FloatAttribute("emisR"), model->FloatAttribute("emisG"), model->FloatAttribute("emisB"),
-							   //model->FloatAttribute("ambiR"), model->FloatAttribute("ambiG"), model->FloatAttribute("ambiB")};
-					};
-
-					// Attribute a color to each of the vertices
-					std::unordered_map<Vertex, Color, VertexHasher> vertColors;
-					for (Vertex vertex : mdl.vertices) {
-						Color clr;
-						try {
-							clr = vertColors.at(vertex);
-						} catch(const std::exception& e) {
-							if (c.diffR != 0 || c.diffG != 0 || c.diffB != 0) {
-								float variation = (rand() / (float) RAND_MAX) / 5;
-								clr = {c.diffR + variation, c.diffG + variation, c.diffB + variation};
-							} else {
-								clr = {rand() / (float) RAND_MAX, rand() / (float) RAND_MAX, rand() / (float) RAND_MAX};
-							}
-							vertColors.insert(std::pair<Vertex,Color>(vertex, clr));
-						}
-						mdl.colors.push_back(clr);
-					}
 				}
+
+				// Extract the color of the model
+				float diff[4] = {model->FloatAttribute("diffR"), model->FloatAttribute("diffG"), model->FloatAttribute("diffB"), 1};
+				if (diff[0] == 0 && diff[1] == 0 && diff[2] == 0) {
+					diff[0] = 1;
+					diff[1] = 1;
+					diff[2] = 1;
+				}
+				float ambi[4] = {model->FloatAttribute("ambiR"), model->FloatAttribute("ambiG"), model->FloatAttribute("ambiB"), 1};
+				if (ambi[0] == 0 && ambi[1] == 0 && ambi[2] == 0) {
+					ambi[0] = 1;
+					ambi[1] = 1;
+					ambi[2] = 1;
+				}
+				float spec[4] = {model->FloatAttribute("specR"), model->FloatAttribute("specG"), model->FloatAttribute("specB"), 1};
+				if (spec[0] == 0 && spec[1] == 0 && spec[2] == 0) {
+					spec[0] = 1;
+					spec[1] = 1;
+					spec[2] = 1;
+				}
+				Color c = { diff[0], diff[1], diff[2], 1,
+							ambi[0], ambi[1], ambi[2], 1,
+							spec[0], spec[1], spec[2], 1,
+							model->FloatAttribute("shin")};
+				mdl.color = c;
 
 				currentG.models.push_back(mdl);
 				numModels++;
@@ -665,9 +653,7 @@ void fillBuffers(Group g) {
 		glBufferData(GL_ARRAY_BUFFER, 3 * m.vertices.size() * 3 * sizeof(GLfloat), nullptr, GL_STATIC_DRAW);
 		glBufferSubData(GL_ARRAY_BUFFER, 0, m.vertices.size() * 3 * sizeof(GLfloat), m.vertices.data());
 		glBufferSubData(GL_ARRAY_BUFFER, m.vertices.size() * 3 * sizeof(GLfloat), m.normals.size() * 3 * sizeof(GLfloat), m.normals.data());
-		if (m.textureIdx == -1)
-			glBufferSubData(GL_ARRAY_BUFFER, (m.vertices.size() + m.normals.size()) * 3 * sizeof(GLfloat), m.colors.size() * 3 * sizeof(GLfloat), m.colors.data());
-		else
+		if (m.textureIdx != -1)
 			glBufferSubData(GL_ARRAY_BUFFER, (m.vertices.size() + m.normals.size()) * 3 * sizeof(GLfloat), m.texCoords.size() * 2 * sizeof(GLfloat), m.texCoords.data());
 	}
 

@@ -263,6 +263,8 @@ void drawAxis() {
 	glEnd();
 }
 
+float camX = dist*cos(beta)*sin(alpha), camY = dist*sin(beta), camZ = dist*cos(beta)*cos(alpha);
+
 // Function called when it is necessary to render the scene
 void renderScene() {
 	// Clear buffers
@@ -270,7 +272,7 @@ void renderScene() {
 
 	// Set the camera
 	glLoadIdentity();
-	gluLookAt(dist*cos(beta)*sin(alpha), dist*sin(beta), dist*cos(beta)*cos(alpha),
+	gluLookAt(camX, camY, camZ,
 			  0.0, 0.0, 0.0,
 			  0.0f, 1.0f, 0.0f);
 
@@ -620,7 +622,7 @@ void processXML(char **argv) {
 
 			GLfloat amb[4] = {0.2f, 0.2f, 0.2f, 1.0f};
 			GLfloat diff[4] = {1.0f, 1.0f, 1.0f, 1.0f};
-			glLightfv(GL_LIGHT0 + lightIdx, GL_AMBIENT, amb);
+			//glLightfv(GL_LIGHT0 + lightIdx, GL_AMBIENT, amb);
 			glLightfv(GL_LIGHT0 + lightIdx, GL_DIFFUSE, diff);
 
 			Light lt;
@@ -661,6 +663,76 @@ void fillBuffers(Group g) {
 		fillBuffers(sg);
 }
 
+int startX, startY, tracking = 0;
+float r = 50;
+
+void processMouseButtons(int button, int state, int xx, int yy) {
+	
+	if (state == GLUT_DOWN)  {
+		startX = xx;
+		startY = yy;
+		if (button == GLUT_LEFT_BUTTON)
+			tracking = 1;
+		else if (button == GLUT_RIGHT_BUTTON)
+			tracking = 2;
+		else
+			tracking = 0;
+	}
+	else if (state == GLUT_UP) {
+		if (tracking == 1) {
+			alpha += (xx - startX);
+			beta += (yy - startY);
+		}
+		else if (tracking == 2) {
+			
+			r -= yy - startY;
+			if (r < 3)
+				r = 3.0;
+		}
+		tracking = 0;
+	}
+}
+
+
+void processMouseMotion(int xx, int yy) {
+
+	int deltaX, deltaY;
+	int alphaAux, betaAux;
+	int rAux;
+
+	if (!tracking)
+		return;
+
+	deltaX = xx - startX;
+	deltaY = yy - startY;
+
+	if (tracking == 1) {
+
+
+		alphaAux = alpha + deltaX;
+		betaAux = beta + deltaY;
+
+		if (betaAux > 85.0)
+			betaAux = 85.0;
+		else if (betaAux < -85.0)
+			betaAux = -85.0;
+
+		rAux = r;
+	}
+	else if (tracking == 2) {
+
+		alphaAux = alpha;
+		betaAux = beta;
+		rAux = r - deltaY;
+		if (rAux < 3)
+			rAux = 3;
+	}
+	camX = rAux * sin(alphaAux * 3.14 / 180.0) * cos(betaAux * 3.14 / 180.0);
+	camZ = rAux * cos(alphaAux * 3.14 / 180.0) * cos(betaAux * 3.14 / 180.0);
+	camY = rAux * 							     sin(betaAux * 3.14 / 180.0);
+}
+
+
 int main(int argc, char **argv) {
 	if (argc != 2) {
 		std::cout << "Por favor, forneça um ficheiro XML\n";
@@ -682,6 +754,8 @@ int main(int argc, char **argv) {
 	// Resgister callback for keyboard processing
 	glutKeyboardFunc(processKeys);
 	glutSpecialFunc(processSpecialKeys);
+	glutMouseFunc(processMouseButtons);
+	glutMotionFunc(processMouseMotion);
 
 #ifndef __APPLE__
 	// Init Glew

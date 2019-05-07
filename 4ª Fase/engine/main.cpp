@@ -26,7 +26,7 @@ struct Color {
 	float diffR, diffG, diffB, diffA;
 	float specR, specG, specB, specA;
 	float ambiR, ambiG, ambiB, ambiA;
-	float shin;
+	float emisR, emisG, emisB, emisA;
 };
 
 struct TexCoord {
@@ -65,6 +65,8 @@ struct Light {
 Group mainGroup;
 
 GLdouble dist = 50, beta = M_PI_4, alpha = M_PI_4, xd = 0, zd = 0;
+GLdouble camX = dist*cos(beta)*sin(alpha), camY = dist*sin(beta), camZ = dist*cos(beta)*cos(alpha);
+int tracking = 0, startX, startY;
 
 // Vector to store vertex positions
 GLuint *buffers;
@@ -220,8 +222,8 @@ void drawGroup(Group g) {
 		glMaterialfv(GL_FRONT, GL_AMBIENT, ambi);
 		float spec[4] = {m.color.specR, m.color.specG, m.color.specB, m.color.specA};
 		glMaterialfv(GL_FRONT, GL_SPECULAR, spec);
-		float shin[1] = {m.color.shin};
-		glMaterialfv(GL_FRONT, GL_SHININESS, shin);
+		float emis[4] = {m.color.emisR, m.color.emisG, m.color.emisB, m.color.emisA};
+		glMaterialfv(GL_FRONT, GL_EMISSION, emis);
 
 		glBindBuffer(GL_ARRAY_BUFFER, buffers[m.bufferIdx]);
 		glVertexPointer(3, GL_FLOAT, 0, 0);
@@ -295,31 +297,37 @@ void renderScene() {
 	glutSwapBuffers();
 }
 
+void toCam() {
+	camX = dist * sin(alpha * M_PI / 180.0) * cos(beta * M_PI / 180.0);
+	camZ = dist * cos(alpha * M_PI / 180.0) * cos(beta * M_PI / 180.0);
+	camY = dist * 							  sin(beta * M_PI / 180.0);
+}
+
 // Function called when an ascii key is pressed
 void processKeys(unsigned char c, int xx, int yy) {
 	float deltaToZoom = 0.3;
 	float deltaToMove = 0.1;
 	switch (c) {
 		// Move the vertices in the (-deltaToMove, 0, -deltaToMove) direction
-		case 'w':
+		case 's':
 			xd -= deltaToMove;
 			zd -= deltaToMove;
 			break;
 
 		// Move the vertices in the (-deltaToMove, 0, deltaToMove) direction
-		case 'a':
+		case 'd':
 			xd -= deltaToMove;
 			zd += deltaToMove;
 			break;
 
 		// Move the vertices in the (deltaToMove, 0, deltaToMove) direction
-		case 's':
+		case 'w':
 			xd += deltaToMove;
 			zd += deltaToMove;
 			break;
 
 		// Move the vertices in the (deltaToMove, 0, -deltaToMove) direction
-		case 'd':
+		case 'a':
 			xd += deltaToMove;
 			zd -= deltaToMove;
 			break;
@@ -353,6 +361,8 @@ void processKeys(unsigned char c, int xx, int yy) {
 			return;
 	}
 
+	toCam();
+
 	glutPostRedisplay();
 }
 
@@ -383,6 +393,84 @@ void processSpecialKeys(int key, int xx, int yy) {
 		default:
 			return;
 	}
+
+	toCam();
+
+	glutPostRedisplay();
+}
+
+void processMouseButtons(int button, int state, int xx, int yy) 
+{
+	if (state == GLUT_DOWN)  {
+		startX = xx;
+		startY = yy;
+		if (button == GLUT_LEFT_BUTTON)
+			tracking = 1;
+		else if (button == GLUT_RIGHT_BUTTON)
+			tracking = 2;
+		else
+		 // Middle button
+			tracking = 0;
+	}
+	else if (state == GLUT_UP) {
+		if (tracking == 1) {
+			alpha += (xx - startX);
+			beta += (yy - startY);
+		}
+		else if (tracking == 2) {
+			
+			dist -= yy - startY;
+			if (dist < 3)
+				dist = 3.0;
+		}
+		tracking = 0;
+	}
+
+	toCam();
+
+	glutPostRedisplay();
+}
+
+
+void processMouseMotion(int xx, int yy)
+{
+
+	int deltaX, deltaY;
+	int alphaAux, betaAux;
+	int rAux;
+
+	if (!tracking)
+		return;
+
+	deltaX = xx - startX;
+	deltaY = yy - startY;
+
+	if (tracking == 1) {
+
+
+		alphaAux = alpha + deltaX;
+		betaAux = beta + deltaY;
+
+		if (betaAux > 85.0)
+			betaAux = 85.0;
+		else if (betaAux < -85.0)
+			betaAux = -85.0;
+
+		rAux = dist;
+	}
+	else if (tracking == 2) {
+
+		alphaAux = alpha;
+		betaAux = beta;
+		rAux = dist - deltaY;
+		if (rAux < 3)
+			rAux = 3;
+	}
+	alpha = alphaAux;
+	beta = betaAux;
+	dist = rAux;
+
+	toCam();
 
 	glutPostRedisplay();
 }
@@ -565,21 +653,17 @@ Group processGroup(tinyxml2::XMLElement *group) {
 					diff[2] = 1;
 				}
 				float ambi[4] = {model->FloatAttribute("ambiR"), model->FloatAttribute("ambiG"), model->FloatAttribute("ambiB"), 1};
-				if (ambi[0] == 0 && ambi[1] == 0 && ambi[2] == 0) {
-					ambi[0] = 1;
-					ambi[1] = 1;
-					ambi[2] = 1;
-				}
 				float spec[4] = {model->FloatAttribute("specR"), model->FloatAttribute("specG"), model->FloatAttribute("specB"), 1};
 				if (spec[0] == 0 && spec[1] == 0 && spec[2] == 0) {
 					spec[0] = 1;
 					spec[1] = 1;
 					spec[2] = 1;
 				}
+				float emis[4] = {model->FloatAttribute("emisR"), model->FloatAttribute("emisG"), model->FloatAttribute("emisB"), 1};
 				Color c = { diff[0], diff[1], diff[2], 1,
 							ambi[0], ambi[1], ambi[2], 1,
 							spec[0], spec[1], spec[2], 1,
-							model->FloatAttribute("shin")};
+							emis[0], emis[1], emis[2], 1};
 				mdl.color = c;
 
 				currentG.models.push_back(mdl);

@@ -62,13 +62,12 @@ struct Light {
 	float x, y, z, w;
 };
 
+// Global variables to be used throughout the simulation
 Group mainGroup;
 
 GLdouble dist = 50, beta = M_PI_4, alpha = M_PI_4, xd = 0, zd = 0;
-GLdouble camX = dist*cos(beta)*sin(alpha), camY = dist*sin(beta), camZ = dist*cos(beta)*cos(alpha);
 int tracking = 0, startX, startY;
 
-// Vector to store vertex positions
 GLuint *buffers;
 int numModels = 0, currentModelIdx = 0;
 std::vector<Light> sceneLights;
@@ -265,8 +264,6 @@ void drawAxis() {
 	glEnd();
 }
 
-float camX = dist*cos(beta)*sin(alpha), camY = dist*sin(beta), camZ = dist*cos(beta)*cos(alpha);
-
 // Function called when it is necessary to render the scene
 void renderScene() {
 	// Clear buffers
@@ -274,7 +271,7 @@ void renderScene() {
 
 	// Set the camera
 	glLoadIdentity();
-	gluLookAt(camX, camY, camZ,
+	gluLookAt(dist*cos(beta)*sin(alpha), dist*sin(beta), dist*cos(beta)*cos(alpha),
 			  0.0, 0.0, 0.0,
 			  0.0f, 1.0f, 0.0f);
 
@@ -295,12 +292,6 @@ void renderScene() {
 
 	// End of frame
 	glutSwapBuffers();
-}
-
-void toCam() {
-	camX = dist * sin(alpha * M_PI / 180.0) * cos(beta * M_PI / 180.0);
-	camZ = dist * cos(alpha * M_PI / 180.0) * cos(beta * M_PI / 180.0);
-	camY = dist * 							  sin(beta * M_PI / 180.0);
 }
 
 // Function called when an ascii key is pressed
@@ -334,12 +325,14 @@ void processKeys(unsigned char c, int xx, int yy) {
 
 		// Move the camera closer to (0, 0, 0)
 		case 'q':
-			dist += deltaToZoom;
+			dist -= deltaToZoom;
+			if (dist < 10)
+				dist = 10;
 			break;
 
 		// Move the camera further from (0, 0, 0)
 		case 'e':
-			dist -= deltaToZoom;
+			dist += deltaToZoom;
 			break;
 
 		// Show triangles as filled shapes
@@ -361,8 +354,6 @@ void processKeys(unsigned char c, int xx, int yy) {
 			return;
 	}
 
-	toCam();
-
 	glutPostRedisplay();
 }
 
@@ -373,11 +364,15 @@ void processSpecialKeys(int key, int xx, int yy) {
 		// Move the camera up
 		case GLUT_KEY_UP:
 			beta += deltaToMove;
+			if (beta > M_PI_2)
+				beta = M_PI_2;
 			break;
 
 		// Move the camera down
 		case GLUT_KEY_DOWN:
 			beta -= deltaToMove;
+			if (beta < -M_PI_2)
+				beta = -M_PI_2;
 			break;
 
 		// Move the camera to the left
@@ -393,84 +388,6 @@ void processSpecialKeys(int key, int xx, int yy) {
 		default:
 			return;
 	}
-
-	toCam();
-
-	glutPostRedisplay();
-}
-
-void processMouseButtons(int button, int state, int xx, int yy) 
-{
-	if (state == GLUT_DOWN)  {
-		startX = xx;
-		startY = yy;
-		if (button == GLUT_LEFT_BUTTON)
-			tracking = 1;
-		else if (button == GLUT_RIGHT_BUTTON)
-			tracking = 2;
-		else
-		 // Middle button
-			tracking = 0;
-	}
-	else if (state == GLUT_UP) {
-		if (tracking == 1) {
-			alpha += (xx - startX);
-			beta += (yy - startY);
-		}
-		else if (tracking == 2) {
-			
-			dist -= yy - startY;
-			if (dist < 3)
-				dist = 3.0;
-		}
-		tracking = 0;
-	}
-
-	toCam();
-
-	glutPostRedisplay();
-}
-
-
-void processMouseMotion(int xx, int yy)
-{
-
-	int deltaX, deltaY;
-	int alphaAux, betaAux;
-	int rAux;
-
-	if (!tracking)
-		return;
-
-	deltaX = xx - startX;
-	deltaY = yy - startY;
-
-	if (tracking == 1) {
-
-
-		alphaAux = alpha + deltaX;
-		betaAux = beta + deltaY;
-
-		if (betaAux > 85.0)
-			betaAux = 85.0;
-		else if (betaAux < -85.0)
-			betaAux = -85.0;
-
-		rAux = dist;
-	}
-	else if (tracking == 2) {
-
-		alphaAux = alpha;
-		betaAux = beta;
-		rAux = dist - deltaY;
-		if (rAux < 3)
-			rAux = 3;
-	}
-	alpha = alphaAux;
-	beta = betaAux;
-	dist = rAux;
-
-	toCam();
 
 	glutPostRedisplay();
 }
@@ -704,10 +621,12 @@ void processXML(char **argv) {
 		for (tinyxml2::XMLElement *light = lights->FirstChildElement("light"); light != nullptr; light = light->NextSiblingElement("light")) {
 			glEnable(GL_LIGHT0 + lightIdx);
 
-			GLfloat amb[4] = {0.2f, 0.2f, 0.2f, 1.0f};
-			GLfloat diff[4] = {1.0f, 1.0f, 1.0f, 1.0f};
-			//glLightfv(GL_LIGHT0 + lightIdx, GL_AMBIENT, amb);
+			GLfloat amb[4] = {0, 0, 0, 1};
+			GLfloat diff[4] = {1, 1, 1, 1};
+			GLfloat spec[4] = {1, 1, 1, 1};
+			glLightfv(GL_LIGHT0 + lightIdx, GL_AMBIENT, amb);
 			glLightfv(GL_LIGHT0 + lightIdx, GL_DIFFUSE, diff);
+			glLightfv(GL_LIGHT0 + lightIdx, GL_SPECULAR, spec);
 
 			Light lt;
 			std::string type = light->Attribute("type");
@@ -747,11 +666,8 @@ void fillBuffers(Group g) {
 		fillBuffers(sg);
 }
 
-int startX, startY, tracking = 0;
-float r = 50;
-
+// Function that handles mouse clicks
 void processMouseButtons(int button, int state, int xx, int yy) {
-	
 	if (state == GLUT_DOWN)  {
 		startX = xx;
 		startY = yy;
@@ -761,59 +677,53 @@ void processMouseButtons(int button, int state, int xx, int yy) {
 			tracking = 2;
 		else
 			tracking = 0;
-	}
-	else if (state == GLUT_UP) {
+	} else if (state == GLUT_UP) {
+		double deltaX = (xx - startX)*M_PI/180;
+		double deltaY = (yy - startY)*M_PI/180;
+	
 		if (tracking == 1) {
-			alpha += (xx - startX);
-			beta += (yy - startY);
-		}
-		else if (tracking == 2) {
-			
-			r -= yy - startY;
-			if (r < 3)
-				r = 3.0;
+			alpha += deltaX;
+			beta += deltaY;
+
+			if (beta > M_PI_2)
+				beta = M_PI_2;
+			else if (beta < -M_PI_2)
+				beta = -M_PI_2;
+		} else if (tracking == 2) {
+			dist -= (yy - startY);
+			if (dist < 10)
+				dist = 10;
 		}
 		tracking = 0;
 	}
 }
 
-
+// Function that handles mouse movement
 void processMouseMotion(int xx, int yy) {
-
-	int deltaX, deltaY;
-	int alphaAux, betaAux;
-	int rAux;
-
 	if (!tracking)
 		return;
 
-	deltaX = xx - startX;
-	deltaY = yy - startY;
+	double deltaX = (xx - startX)*M_PI/180;
+	double deltaY = (yy - startY)*M_PI/180;
 
 	if (tracking == 1) {
+		alpha += deltaX;
+		beta += deltaY;
 
-
-		alphaAux = alpha + deltaX;
-		betaAux = beta + deltaY;
-
-		if (betaAux > 85.0)
-			betaAux = 85.0;
-		else if (betaAux < -85.0)
-			betaAux = -85.0;
-
-		rAux = r;
+		if (beta > M_PI_2)
+			beta = M_PI_2;
+		else if (beta < -M_PI_2)
+			beta = -M_PI_2;
+	} else if (tracking == 2) {
+		dist -= (yy - startY);
+		if (dist < 10)
+			dist = 10;
 	}
-	else if (tracking == 2) {
 
-		alphaAux = alpha;
-		betaAux = beta;
-		rAux = r - deltaY;
-		if (rAux < 3)
-			rAux = 3;
-	}
-	camX = rAux * sin(alphaAux * 3.14 / 180.0) * cos(betaAux * 3.14 / 180.0);
-	camZ = rAux * cos(alphaAux * 3.14 / 180.0) * cos(betaAux * 3.14 / 180.0);
-	camY = rAux * 							     sin(betaAux * 3.14 / 180.0);
+	startX = xx;
+	startY = yy;
+
+	glutPostRedisplay();
 }
 
 
@@ -835,7 +745,7 @@ int main(int argc, char **argv) {
 	glutIdleFunc(renderScene);
 	glutReshapeFunc(resizeWindow);
 
-	// Resgister callback for keyboard processing
+	// Resgister callback for keyboard and mouse processing
 	glutKeyboardFunc(processKeys);
 	glutSpecialFunc(processSpecialKeys);
 	glutMouseFunc(processMouseButtons);

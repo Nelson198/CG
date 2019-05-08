@@ -18,10 +18,12 @@
 
 #include "tinyxml2.h"
 
+// Structure that represents a 3D vertex
 struct Vertex {
 	float x, y, z;
 };
 
+// Structure that represents a color and all its components
 struct Color {
 	float diffR, diffG, diffB, diffA;
 	float specR, specG, specB, specA;
@@ -29,10 +31,12 @@ struct Color {
 	float emisR, emisG, emisB, emisA;
 };
 
+// Structure that represents the coordinates of a texture
 struct TexCoord {
 	float s, t;
 };
 
+// Structure that represents a transformation and all its parameters
 struct Transformation {
 	char type;    // It can be: [TM] - Translate (Normal/Time), [AI] - Rotate (Angle/Time), S - Scale
 	float param1; // These parameters depend on the type
@@ -42,6 +46,7 @@ struct Transformation {
 	std::vector<Vertex> catmull;
 };
 
+// Structure that represents a model, i.e., all the information of a primite to be drawn
 struct Model {
 	int bufferIdx;
 	int textureIdx;
@@ -51,28 +56,36 @@ struct Model {
 	Color color;
 };
 
+// Structure that represents a group composed of transformations, models and sub-groups
 struct Group {
 	std::vector<Transformation> trans;
 	std::vector<Model> models;
 	std::vector<Group> subGroups;
 };
 
+// Structure that represents a light to be displayed
 struct Light {
 	int idx;
 	float x, y, z, w;
 };
 
-// Global variables to be used throughout the simulation
+/// Global variables
+// Group that contains the information of the entire scene
 Group mainGroup;
 
+// Variables related to camera and mouse movement
 GLdouble dist = 50, beta = M_PI_4, alpha = M_PI_4, xd = 0, zd = 0;
 int tracking = 0, startX, startY;
 
+// Variables related to VBO's
 GLuint *buffers;
 int numModels = 0, currentModelIdx = 0;
-std::vector<Light> sceneLights;
 
-// Function that normalizes a vector
+// Vector that contains all the lights of the scene
+std::vector<Light> sceneLights;
+///
+
+// Function that normalizes a 3D vector
 void normalize(float* a) {
 	float l = sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2]);
 
@@ -91,7 +104,7 @@ void multMatrixVector(float *m, float *v, float *res) {
     }
 }
 
-// Function that returns the point in the curve given a time
+// Function that returns the point in the catmull-rom curve given a time
 Vertex getCatmullRomPoint(float t, Vertex v0, Vertex v1, Vertex v2, Vertex v3, Vertex *deriv) {
     float T[4] = {powf(t,3), powf(t,2), t, 1};
     float T1[4] = {3*powf(t,2), 2*t, 1, 0};
@@ -124,12 +137,12 @@ Vertex getCatmullRomPoint(float t, Vertex v0, Vertex v1, Vertex v2, Vertex v3, V
 	return pos;
 }
 
-// Function that returns the point in the curve given a time
+// Function that returns the point in the catmull-rom curve given a time
 Vertex getGlobalCatmullRomPoint(std::vector<Vertex> pontos, float elapsedTime, Vertex *deriv) {
     int POINT_COUNT = pontos.size();
     float t = elapsedTime * POINT_COUNT; // this is the real global t
     int index = floor(t);  // which segment
-    t = t - index; // where within  the segment
+    t = t - index; // where within the segment
 
     // indices store the points
     int indices[4]; 
@@ -162,6 +175,7 @@ void drawGroup(Group g) {
 
 	int numRotations = 0;
 	float timeRotationParams[4];
+	// Apply all the transformations before drawing the models
 	for (Transformation t: g.trans) {
 		switch (t.type) {
 			case 'T': // Translation
@@ -211,6 +225,7 @@ void drawGroup(Group g) {
 		}
 	}
 
+	// Draw each model now that all transformations have been applied
 	for (Model m : g.models) {
 		if (m.textureIdx != -1)
 			glBindTexture(GL_TEXTURE_2D, m.textureIdx);
@@ -237,9 +252,11 @@ void drawGroup(Group g) {
 		glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 	}
 
+	// Revert the last rotation if there are two of them
 	if (numRotations == 2)
 		glRotatef(-timeRotationParams[0], timeRotationParams[1], timeRotationParams[2], timeRotationParams[3]);
 
+	// Draw each of the sub-groups
 	for (Group g: g.subGroups)
 		drawGroup(g);
 
@@ -275,14 +292,14 @@ void renderScene() {
 			  0.0, 0.0, 0.0,
 			  0.0f, 1.0f, 0.0f);
 
+	// Translate the world view to the desired location
+	glTranslatef(xd, 0, zd);
+
 	// Turn the lights on
 	for (Light l : sceneLights) {
 		float pos[4] = {l.x, l.y, l.z, l.w};
 		glLightfv(GL_LIGHT0 + l.idx, GL_POSITION, pos);
 	}
-
-	// Translate the vertices to the desired location
-	glTranslatef(xd, 0, zd);
 
 	// Draw the axis
 	// drawAxis();
@@ -466,8 +483,8 @@ TexCoord extractTexCoord(std::string str) {
 	return TexCoord{s,t};
 }
 
-// Function that adds the vertices and the normals to a model from a file
-void addVerticesNormals(std::ifstream &vertices, Model *mdl) {
+// Function that adds the vertices, the normals and the textures to a model from a file
+void addModelInfo(std::ifstream &vertices, Model *mdl) {
 	char v[100];
 	int lineType = 0;
 	while (vertices.getline(v, 100)) {
@@ -483,6 +500,7 @@ void addVerticesNormals(std::ifstream &vertices, Model *mdl) {
 	}
 }
 
+// Function that loads a texture given its path
 int loadTexture(std::string s) {
 	ilInit();
 	ilEnable(IL_ORIGIN_SET);
@@ -552,7 +570,7 @@ Group processGroup(tinyxml2::XMLElement *group) {
 				// Extract the vertices
 				std::ifstream myfile;
 				myfile.open(model->Attribute("file"));
-				addVerticesNormals(myfile, &mdl);
+				addModelInfo(myfile, &mdl);
 
 				myfile.close();
 
@@ -640,8 +658,9 @@ void processXML(char **argv) {
 				lt.y = light->FloatAttribute("dirY");
 				lt.z = light->FloatAttribute("dirZ");
 				lt.w = 0;
-			} else if (type == "SPOT") {
-				// ACABAR //
+			} else {
+				printf("Tipo de luz desconhecida: %s\n", type.c_str());
+				exit(EXIT_FAILURE);
 			}
 			sceneLights.push_back(lt);
 			lightIdx++;
@@ -652,6 +671,7 @@ void processXML(char **argv) {
 	mainGroup = processGroup(scene);
 }
 
+// Function that fills the VBO's buffers for a given group and all its sub-groups
 void fillBuffers(Group g) {
 	for (Model m : g.models) {
 		glBindBuffer(GL_ARRAY_BUFFER, buffers[m.bufferIdx]);
@@ -669,6 +689,7 @@ void fillBuffers(Group g) {
 // Function that handles mouse clicks
 void processMouseButtons(int button, int state, int xx, int yy) {
 	if (state == GLUT_DOWN)  {
+		// Mouse button pressed
 		startX = xx;
 		startY = yy;
 		if (button == GLUT_LEFT_BUTTON)
@@ -678,6 +699,7 @@ void processMouseButtons(int button, int state, int xx, int yy) {
 		else
 			tracking = 0;
 	} else if (state == GLUT_UP) {
+		// Mouse button released
 		double deltaX = (xx - startX)*M_PI/180;
 		double deltaY = (yy - startY)*M_PI/180;
 	
@@ -707,6 +729,7 @@ void processMouseMotion(int xx, int yy) {
 	double deltaY = (yy - startY)*M_PI/180;
 
 	if (tracking == 1) {
+		// Mouse dragged while left button pressed (pan)
 		alpha += deltaX;
 		beta += deltaY;
 
@@ -715,6 +738,7 @@ void processMouseMotion(int xx, int yy) {
 		else if (beta < -M_PI_2)
 			beta = -M_PI_2;
 	} else if (tracking == 2) {
+		// Mouse dragged while right button pressed (zoom)
 		dist -= (yy - startY);
 		if (dist < 10)
 			dist = 10;

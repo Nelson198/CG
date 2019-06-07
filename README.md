@@ -1,5 +1,6 @@
 # Licenciatura em Ciências da Computação - UMinho
-# Trabalho Prático - Computação Gráfica
+# Computação Gráfica - 2018/2019
+# Trabalho Prático - Sistema Solar
 Grupo **nº2**:  
 
 | **Nome** | Número |
